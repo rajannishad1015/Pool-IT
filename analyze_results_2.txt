@@ -1,0 +1,6 @@
+Analyzing Pooling...                                            
+
+   info - The private field _isLoading could be 'final' - lib\features\auth\login_screen.dart:15:8 - prefer_final_fields
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\rides\widgets\ride_card.dart:98:47 - deprecated_member_use
+
+2 issues found. (ran in 2.4s)

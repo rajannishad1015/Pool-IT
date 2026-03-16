@@ -1,0 +1,224 @@
+{
+   "checksum": "61aca53b07370a7752870e6fbda588e6",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13361714202219379",
+            "date_last_used": "13372782238879004",
+            "guid": "5c15b98b-47b2-49e3-a47c-6aa5c7a8aa13",
+            "id": "7",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Instagram",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://www.instagram.com/accounts/onetap/?next=%2F",
+            "visit_count": 1
+         }, {
+            "date_added": "13384019929086831",
+            "date_last_used": "0",
+            "guid": "f20fa1c1-62b2-490e-b4a7-d797a8a49aa4",
+            "id": "8",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipNw2v1EUwHDcFpiysJsFG2Co_FonQV362jhBZ3h?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020051163743",
+            "date_last_used": "0",
+            "guid": "2f8f41ba-4687-41d1-ba55-4cdb544ab6b7",
+            "id": "9",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipMtfHk6K7Zfv0_uVU3qs8zDxlDEPBxKAExf_Q4y?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020355258761",
+            "date_last_used": "0",
+            "guid": "dffdf045-d247-4bdc-b7ad-b6a68872b053",
+            "id": "10",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipNIbt0Ge9XSPsFi7jO3X_jKbMhgInJDBnUNYAoA?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020365265571",
+            "date_last_used": "0",
+            "guid": "015bcc3d-9afa-439d-b7fb-66a2906afffe",
+            "id": "11",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipO2qle8qTrQ6yNKPbJK41SMLJgii_Zhwt4lip5Y?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020508760165",
+            "date_last_used": "0",
+            "guid": "5e5cde02-5e8d-4ae2-a495-66fd41edce28",
+            "id": "12",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipOzGWtBPkVWDzABl5PMFoj2itM3XFparz8e-feo?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020556079949",
+            "date_last_used": "0",
+            "guid": "731f8198-9ef3-47d7-976c-04ba96bce749",
+            "id": "13",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipP5t7XjJnPQRycEHh_PTAHvHODU9TuWBDbdBx-2?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020639710086",
+            "date_last_used": "0",
+            "guid": "06cc139b-07a2-445f-b1a4-9086a76b06d3",
+            "id": "14",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipO9YetIIYnmMkg2aw-nWTRTvt_8O63Qu6RmFtls?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384020673700072",
+            "date_last_used": "0",
+            "guid": "eb59395d-fa24-4818-a88d-6c2d43623a60",
+            "id": "15",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipOGHxxGCkRHLSOJVuMXSOr1odhjbEZYr1KxspZs?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13384021137005203",
+            "date_last_used": "0",
+            "guid": "0b934bc9-dcbf-4e9e-9570-de226d5fdd30",
+            "id": "16",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Photo in Nss Unofficial Camp Pics 24-25 - Google Photos",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://photos.google.com/share/AF1QipPJjbcc3yST1GHyq7rkMj7xe5J2Eo5n1WeFCi92uNV82en_mr83aYo8xifTESAjzA/photo/AF1QipOK1mAhRbD-cNqT2s4J-8ZWKIAHV6y78NkjYTD5?key=eTg0N1VYcENkQ1Z4VjJIaDZJbS1mZkZoeG00eUp3",
+            "visit_count": 1
+         }, {
+            "date_added": "13405764361762827",
+            "date_last_used": "0",
+            "guid": "097b5428-9374-44c0-bd4a-83fbd2ddc856",
+            "id": "17",
+            "name": "Microsoft Fabric free - Sign up",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://signup.microsoft.com/get-started/signup?sku=a403ebcc-fae0-4ca2-8c8c-7a907fd6c235&ru=https%3a%2f%2fapp.powerbi.com%3fpbi_source%3ddesktop%26redirectedFromSignup%3d1%26noSignUpCheck%3d1&email=rajannishad1018%40gmil.com&products=a403ebcc-fae0-4ca2-8c8c-7a907fd6c235&ali=1",
+            "visit_count": 1
+         }, {
+            "date_added": "13408891212289408",
+            "date_last_used": "0",
+            "guid": "8ef2b02d-1e7d-43d3-a9db-b81c3304c9d7",
+            "id": "18",
+            "name": "Create Next App",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "http://localhost:3000/",
+            "visit_count": 1
+         }, {
+            "date_added": "13417469051851030",
+            "date_last_used": "0",
+            "guid": "680a2670-df88-4ce6-83b2-155ff02a0d51",
+            "id": "19",
+            "name": "Abhinav's Terminal Portfolio",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://terminal.iabhinav.me/",
+            "visit_count": 1
+         } ],
+         "date_added": "13418040969899921",
+         "date_last_used": "0",
+         "date_modified": "13417469051851030",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Favorites bar",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13418040969899921",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13418040969899921",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "workspaces_v2": {
+         "children": [  ],
+         "date_added": "13418040969899921",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "75aa6670-344f-549d-b742-660f029506ab",
+         "id": "5",
+         "name": "Workspaces",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CjEKDgiIgQISCAX19M6cAQAAEgAqGEQ4QmhiNEFLNFovMVdrMGV6YjY0RkE9PUgDoAYHEo4BCAUSiQEKHHdSQnJaTCs2UEE5YXZLZ2pOUDdKWERMY2Z2cz0SJDNmMjYzMTM3LTcyNTMtNWFmZC04ODM2LTJkMWJiNTM1ODJiNhgAIAAoADDr4fOqpDM4h+bzqqQzQIfm86qkM0ocbm14NjVzUUR2eEk4VGdFZXYrQStudHRvU240PVoAZQAAAADCPgJgABKuAQgTEqkBChxqZnBqek5LZmErT1I0YmRKajhkMStsamVFN1k9EiQ2ODBhMjY3MC1kZjg4LTRjZTYtODNiMi0xNTVmZjAyYTBkNTEYACAAKAAw3I+P9swzOMCSj/bMM0DAko/2zDNKHDlxZFUrbUtmRTF6bGV1UEt3dERwajAwcVJ6RT1aICIe/+x4eE00NHFyL042WVBFMWdqZ1ZPb2Y0Mkx6ckU9ZVkuTfLCPgJgBRKtAQgPEqgBChx0UFQ2bFBoMlB6WnZ2SkJ3V3RzQ1F1RHpSQkE9EiRlYjU5Mzk1ZC1mYTI0LTQ4MTgtYTg4ZC02YzJkNDM2MjNhNjAYACAAKAAwm9PXqNAyOPHV16jQMkDx1deo0DJKHHIyTncwUkpkZFNzMjYvTXZOT2JUbng5cmtoYz1aHyId/01Od3RNSmh3clgyVWlCVmxKQ2hJTFNaOVVzTT1lNJIy4sI+AmAFEq4BCBISqQEKHE1vajlibm01VXZQRjZMZG9YUUtMR2g0TDFTMD0SJDhlZjJiMDJkLTFlN2QtNDNkMy1hOWRiLWI4MWMzMzA0YzlkNxgAIAAoADCE6tP3zDM4xvbx+6wzQMb28fusM0ocbVI5cVo1TWxMQnoyRUF6bEkwQk05bWQ4eFRBPVogIh7/2UJhSS9WOXExMnJkWTJlUXd2aDR6enNIaGZhTT1lQSD0psI+AmAFEq0BCA0SqAEKHDc4TW9OMzhpTG15ZDQvdTRlbFlVUE02OXQxbz0SJDczMWY4MTk4LTllZjMtNDdkNy05NzZjLTA0YmE5NmJjZTc0ORgAIAAoADDq2NCo0DI4pr/QqNAyQKa/0KjQMkocRkpwTWtuc2NDdFkyWUlGbklkNS9oaWFPckdjPVofIh39RUJ3SU54U2JQL05oTmd5SkUzUERDbjZEQVc0PWU0kjLiwj4CYAUSrQEICxKoAQocZFVPL1JxY1hnb3ZQd0Z4RXhhd1Z0bFpQV21nPRIkMDE1YmNjM2QtOWFmYS00MzlkLWI3ZmItNjZhMjkwNmFmZmZlGAAgACgAMNfpxKjQMji37MSo0DJAt+zEqNAyShxzTTlVNXRlMVlKeUNhbWhiWTNjTU5WUnNpQmc9Wh8iHfZnWHMvd1pSaFNId0xuaTZwZmRNd1dDZVpxSjA9ZTSSMuLCPgJgBRKtAQgKEqgBChxCVHNuQWFBQ2w2Y2xVQUlOdlNNSTBGRkhGdzA9EiRkZmZkZjA0NS1kMjQ3LTRiZGMtYjdhZC1iNmE2ODg3MmIwNTMYACAAKAAw1/nVy8YzONmgxKjQMkDZoMSo0DJKHGdXL1lyZUtNUUl4b1Y5bENPYWt2UWwrY1FhYz1aHyId7TR5T1Bpc2lna3VZczdVZGhqeEE4YXpIc1ZHdz1lq4pVdMI+AmAFEq0BCAwSqAEKHDlBbURBaEtYd2xKN1JDRnQ3YmRnOHM4ZXFaTT0SJDVlNWNkZTAyLTVlOGQtNGFlMi1hNDk1LTY2ZmQ0MWVkY2UyOBgAIAAoADDxys2o0DI43c3NqNAyQN3NzajQMkocbHBjM1gzYlg3Q1ZoVnBxUWdIOVo0SE0rL1BFPVofIh37VzBxNFIyUTFEdXpDckMxbEFyK1VYNm9PbXBvPWU0kjLiwj4CYAUSrQEICRKoAQocK29yU0M1bGdSOHlvRTVBZ3ZSUU1xYVVaUkxZPRIkMmY4ZjQxYmEtNDY4Ny00MWQxLWJhNTUtNGNkYjU0NGFiNmI3GAAgACgAMNj51cvGMzjY1rGo0DJA2NaxqNAyShxRejVlMjV5NXFpdHczbEhYMmdyL2hlKzdZZG89Wh8iHdsycGgweEhtZkkySGt1MkdvTkdmM2V0RmwvQ3c9ZauKVXTCPgJgBRKOAQgBEokBChx5eEovNmZ2a2VjcjdrcDVFUXpCNHRXTHBkYkU9EiRjZDM0OGE2MC05Y2U0LTU2YzQtOGEzMC1iM2I0ZDkwMGE5MGEYACAAKAAwnaGyqvgxOMSosqr4MUDEqLKq+DFKHGFSQ1dMZ2hGOWI1SW5xS0lEdnVKL2p2UWtGYz1aAGUAAAAAwj4CYAASrQEICBKoAQocNVRWN0F0b2UyWVlWeTBVS1NOVUZzcE10NVpZPRIkZjIwZmExYzEtNjJiMi00OTBlLWI0YTctZDc5N2E4YTQ5YWE0GAAgACgAMKqP1svGMziXnaqo0DJAl52qqNAyShxBSzdyb1BOZUNjL3FZODUzREZEdVRyRHZEVW89Wh8iHbZVLzZLU0M2bktaMlUzVGFmVFBCUHJzUEFTa0k9ZauKVXTCPgJgBRKsAQgHEqcBChx6bzllTGZCNUlIU000OUpJd2tEL3p2OFBEQ289EiQ1YzE1Yjk4Yi00N2IyLTQ5ZTMtYTQ3Yy02YWE1YzdhOGFhMTMYACAAKAAw8rTf45UzOIjhkJz9MUCI4ZCc/TFKHEFEM3MzQjcyb090YW9ya0VFYUEzRG1DeVd0UT1aHiIcbFlDQnJLdHN1dUpTeGtPakZHNlU5aXVsRGhrPWV5Juzwwj4CYAUSrQEIDhKoAQocc2RlQi9JR1ozdjNFNEQwaGhBQyt6elYwd1pZPRIkMDZjYzEzOWItMDdhMi00NDVmLWIxYTQtOTA4NmE3NmIwNmQzGAAgACgAMNTJ1ajQMjivzNWo0DJAr8zVqNAyShxVL0QrUm1jbXN2MjcrZnZFYndYVFZPSmhaL2M9Wh8iHf5FVWxmazFFdTYrL3NycUgvaUdyNk1IczEvekE9ZTSSMuLCPgJgBRKuAQgREqkBChxxVndmNjNDR1JyVGpkcGh4K0ZkakZJTEQyM3c9EiQwOTdiNTQyOC05Mzc0LTQ0YzAtYmQ0YS04M2ZiZDJkZGM4NTYYACAAKAAwoKvxqKEzOJuu8aihM0CbrvGooTNKHGR1aHdJRzhvclhhUC9TL1B1SVF3WDBrNlRjND1aICIe/7JZN2drNHZWNTd2cEYxWlBNc2lGZzRyT1k5b3c9ZUT8q7XCPgJgBRKtAQgQEqgBChxCRFEvL2kvUnNBbnRGYWlubHNCYnR1aUhjSW89EiQwYjkzNGJjOS1kY2JmLTRlOWUtOTU3MC1kZTIyNmQ1ZmRkMzAYACAAKAAwuffzqNAyOJT686jQMkCU+vOo0DJKHFA1NTVycmJiNCtaSnZzK1A5Y1JDTWJoUE9HMD1aHyId/2UreUJSam1WMmVZdW5hR3FmT1ZVRkpUdnRpND1lNJIy4sI+AmAFEo4BCAISiQEKHFljU1RvbnZFU1B3cUNzNEwyY3JWaHY2OEw5OD0SJDk1MjY2ZDU3LTAzZWEtNWU1OS1hZDhiLWQwYmYwMDIxM2MyNhgAIAAoADCeobKq+DE44qiyqvgxQOKosqr4MUocb1BWa2h3QlJiVjY1S0NXUjIrSU9OSFdvT3U4PVoAZQAAAADCPgJgABKOAQgDEokBChxuamdEdTg4ZUNydlhwODZwRDdmSEdjcUZwODg9EiQ1ZTM0MjY0OC0wZmQyLTU1MjYtODYzMi02NWFhN2ZhNmMwZDkYACAAKAAwo6GyqvgxOJKpsqr4MUCSqbKq+DFKHHl6TkIwMWNuNTRBN2NSVTB1VCsvUGdtVHRVbz1aAGUAAAAAwj4CYAAwADgA",
+   "version": 1
+}

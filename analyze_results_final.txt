@@ -1,0 +1,5 @@
+Analyzing Pooling...                                            
+
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\auth\login_screen.dart:82:42 - use_build_context_synchronously
+
+1 issue found. (ran in 2.2s)
