@@ -5,11 +5,17 @@ import '../../core/theme/app_colors.dart';
 import 'widgets/ride_card.dart';
 
 class RidesListScreen extends ConsumerWidget {
-  const RidesListScreen({super.key});
+  final String? destination;
+
+  const RidesListScreen({
+    super.key,
+    this.destination,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ridesAsync = ref.watch(availableRidesProvider(const {}));
+    debugPrint('RidesListScreen: Building with destination: $destination');
+    final ridesAsync = ref.watch(availableRidesProvider(destination));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -57,6 +63,7 @@ class RidesListScreen extends ConsumerWidget {
       ),
       body: ridesAsync.when(
         data: (rides) {
+          debugPrint('RidesListScreen: Received ${rides.length} rides');
           if (rides.isEmpty) {
             return Center(
               child: Column(
@@ -67,7 +74,7 @@ class RidesListScreen extends ConsumerWidget {
                   const Text('No rides found for your route', style: TextStyle(color: AppColors.grey)),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () => ref.invalidate(availableRidesProvider(const {})),
+                    onPressed: () => ref.invalidate(availableRidesProvider(null)),
                     child: const Text('Refresh'),
                   ),
                 ],
@@ -82,8 +89,26 @@ class RidesListScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Error: $e')),
+        loading: () {
+          debugPrint('RidesListScreen: Loading rides...');
+          return const Center(child: CircularProgressIndicator());
+        },
+        error: (e, s) {
+          debugPrint('RidesListScreen ERROR: $e');
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: $e', style: const TextStyle(color: AppColors.error)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(availableRidesProvider(destination)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

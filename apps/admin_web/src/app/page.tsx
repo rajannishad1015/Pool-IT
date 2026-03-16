@@ -63,7 +63,7 @@ export default function DashboardOverview() {
     queryFn: async () => {
       // Combining recent events for a unified feed
       const { data: docs } = await supabase.from('driver_documents')
-        .select('id, doc_type, created_at, profiles(full_name)')
+        .select('id, doc_type, created_at, profiles:driver_id(full_name)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .limit(3)

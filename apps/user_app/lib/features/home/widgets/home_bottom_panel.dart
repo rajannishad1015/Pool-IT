@@ -1,10 +1,138 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/providers/map_providers.dart';
 import '../../../shared/widgets/primary_button.dart';
 
-class HomeBottomPanel extends StatelessWidget {
+class HomeBottomPanel extends ConsumerStatefulWidget {
   const HomeBottomPanel({super.key});
+
+  @override
+  ConsumerState<HomeBottomPanel> createState() => _HomeBottomPanelState();
+}
+
+class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
+  String _destination = '';
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.accentCoral,
+              onPrimary: Colors.white,
+              onSurface: AppColors.primaryNavy,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.accentCoral,
+              onPrimary: Colors.white,
+              onSurface: AppColors.primaryNavy,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
+  void _showDestinationPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        String tempDest = _destination;
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Where to?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Enter destination...',
+                  prefixIcon: const Icon(Icons.location_on, color: Colors.redAccent),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (value) => tempDest = value,
+                onSubmitted: (value) {
+                  setState(() => _destination = value);
+                  // Trigger geocoding & show on map
+                  ref.read(mapRouteProvider.notifier).setDestination(value);
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: PrimaryButton(
+                  text: 'Confirm',
+                  onPressed: () {
+                    setState(() => _destination = tempDest);
+                    // Trigger geocoding & show on map
+                    ref.read(mapRouteProvider.notifier).setDestination(tempDest);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,11 +185,11 @@ class HomeBottomPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _buildInput(
-            onTap: () => context.push('/rides'), // Simulated search trigger
+            onTap: _showDestinationPicker,
             icon: Icons.location_on,
             iconColor: Colors.redAccent,
-            text: 'Enter destination',
-            isPlaceholder: true,
+            text: _destination.isEmpty ? 'Enter destination' : _destination,
+            isPlaceholder: _destination.isEmpty,
           ),
           const SizedBox(height: 10),
           // Time Selectors
@@ -69,20 +197,20 @@ class HomeBottomPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildInput(
-                  onTap: () {}, // Open Date Picker
+                  onTap: () => _selectDate(context),
                   icon: Icons.calendar_today_outlined,
                   iconColor: AppColors.trustBlue,
-                  text: 'Today',
+                  text: DateFormat('MMM dd, EEE').format(_selectedDate),
                   isPlaceholder: false,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _buildInput(
-                  onTap: () {}, // Open Time Picker
+                  onTap: () => _selectTime(context),
                   icon: Icons.access_time,
                   iconColor: AppColors.trustBlue,
-                  text: 'Now',
+                  text: _selectedTime.format(context),
                   isPlaceholder: false,
                 ),
               ),
@@ -94,7 +222,18 @@ class HomeBottomPanel extends StatelessWidget {
             width: double.infinity,
             child: PrimaryButton(
               text: 'Find Rides',
-              onPressed: () => context.push('/rides'),
+              onPressed: () {
+                debugPrint('HomeBottomPanel: Finding rides for destination: $_destination');
+                context.push(
+                  Uri(
+                    path: '/rides',
+                    queryParameters: {
+                      'destination': _destination,
+                      'date': _selectedDate.toIso8601String(),
+                    },
+                  ).toString(),
+                );
+              },
             ),
           ),
           const SizedBox(height: 8),

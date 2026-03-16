@@ -203,7 +203,7 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Text('Error loading vehicles', style: TextStyle(color: Colors.red)),
+          error: (_, _) => const Text('Error loading vehicles', style: TextStyle(color: Colors.red)),
         ),
       ],
     );

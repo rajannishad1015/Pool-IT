@@ -364,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: rides.length > 5 ? 5 : rides.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final ride = rides[index];
             return _buildRideCard(ride);
@@ -372,7 +372,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Text('Error loading rides', style: TextStyle(color: Colors.red)),
+      error: (_, _) => const Text('Error loading rides', style: TextStyle(color: Colors.red)),
     ) ?? const SizedBox.shrink();
   }
 

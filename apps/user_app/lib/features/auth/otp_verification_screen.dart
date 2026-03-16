@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/supabase_providers.dart';
 import '../../core/theme/app_colors.dart';
@@ -29,15 +30,24 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     setState(() => _isLoading = true);
     try {
       final authService = ref.read(authServiceProvider);
+      debugPrint('Auth: Verifying OTP for ${widget.phone}');
       await authService.verifyOtp(
         phone: widget.phone,
         token: _otpController.text.trim(),
       );
+      debugPrint('Auth: OTP verification successful for ${widget.phone}');
       // Success will be handled by AppRouter authStateProvider
-    } catch (e) {
+    } on AuthException catch (e) {
+      debugPrint('Auth: OTP verification failed (${e.statusCode}): ${e.message}');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Verification failed: $e')),
+        SnackBar(content: Text('Verification failed: ${e.message}')),
+      );
+    } catch (e) {
+      debugPrint('Auth: OTP unexpected error: ${e.toString()}');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Verification failed: ${e.toString()}')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

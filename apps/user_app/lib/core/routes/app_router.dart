@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'go_router_refresh_stream.dart';
 import '../services/supabase_service.dart';
 import '../../features/auth/splash_screen.dart';
 import '../../features/auth/login_screen.dart';
@@ -18,7 +17,7 @@ import '../../features/rides/active_ride_screen.dart';
 final appRouter = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
+    // refreshListenable: GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
     redirect: (context, state) {
       final session = SupabaseService.client.auth.currentSession;
       final matchedPath = state.matchedLocation;
@@ -64,7 +63,9 @@ final appRouter = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/rides',
-        builder: (context, state) => const RidesListScreen(),
+        builder: (context, state) => RidesListScreen(
+          destination: state.uri.queryParameters['destination'],
+        ),
       ),
       GoRoute(
         path: '/ride-detail',

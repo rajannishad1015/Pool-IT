@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/supabase_providers.dart';
@@ -126,35 +127,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : 'Continue with Phone',
                 isLoading: _isLoading,
                 onPressed: () async {
+                  final authService = ref.read(authServiceProvider);
+                  final email = _emailController.text.trim();
+                  final password = _passwordController.text.trim();
+                  final phone = _phoneController.text.trim();
+
+                  if (_isEmailMode) {
+                    if (email.isEmpty || password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter both email and password')),
+                      );
+                      return;
+                    }
+                    if (!email.contains('@')) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid email address')),
+                      );
+                      return;
+                    }
+                  } else {
+                    if (phone.isEmpty || phone.length < 10) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid 10-digit phone number')),
+                      );
+                      return;
+                    }
+                  }
+
                   setState(() => _isLoading = true);
                   try {
-                    final authService = ref.read(authServiceProvider);
                     if (_isEmailMode) {
+                      debugPrint('Auth: Attempting email ${_isSignUp ? "Sign Up" : "Login"} for: $email');
+                      debugPrint('Auth: Password length: ${password.length}');
+                      
                       if (_isSignUp) {
                         await authService.signUpWithEmail(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
+                          email: email,
+                          password: password,
                         );
                         if (!context.mounted) return;
-                        context.push('/email-verification', extra: _emailController.text.trim());
+                        context.push('/email-verification', extra: email);
                       } else {
                         await authService.signInWithEmail(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
+                          email: email,
+                          password: password,
                         );
-                        // Redirect will be handled by AppRouter automatically due to authStateProvider
+                        debugPrint('Auth: Login successful for $email');
                       }
                     } else {
-                      await authService.signInWithPhone(
-                        _phoneController.text.trim(),
-                      );
+                      debugPrint('Auth: Attempting phone login for: $phone');
+                      await authService.signInWithPhone(phone);
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('OTP sent successfully!')),
                       );
-                      context.push('/otp-verification', extra: _phoneController.text.trim());
+                      context.push('/otp-verification', extra: phone);
                     }
+                  } on AuthException catch (e) {
+                    debugPrint('Auth: Supabase AuthException (${e.statusCode}): ${e.message}');
+                    if (!context.mounted) return;
+                    
+                    String message = e.message;
+                    if (e.message.contains('Invalid login credentials')) {
+                      message = 'Invalid email or password. Please check your credentials.';
+                    } else if (e.message.contains('Email not confirmed')) {
+                      message = 'Please confirm your email before logging in.';
+                    } else if (e.message.contains('Too many requests')) {
+                      message = 'Too many attempts. Please try again later.';
+                    }
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
                   } catch (e) {
+                    debugPrint('Auth: Unexpected error: ${e.toString()}');
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Error: ${e.toString()}')),

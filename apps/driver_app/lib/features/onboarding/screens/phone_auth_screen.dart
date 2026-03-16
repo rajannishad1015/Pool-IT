@@ -180,7 +180,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                       Container(
                         width: 1,
                         height: 24,
-                        color: AppColors.textSecondary.withOpacity(0.2),
+                        color: AppColors.textSecondary.withValues(alpha: 0.2),
                       ),
                       Expanded(
                         child: TextField(
@@ -244,9 +244,9 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.redAccent.withOpacity(0.1),
+        color: Colors.redAccent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

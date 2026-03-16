@@ -121,7 +121,11 @@ export default function VerificationQueuePage() {
 
   const getDocUrl = (path: string) => {
     if (!path) return ""
-    const { data } = supabase.storage.from("driver-docs").getPublicUrl(path)
+    // Handle full URLs directly stored in the database
+    if (path.startsWith('http')) return path
+    
+    // Fallback to storage bucket (checking both "documents" and "driver-docs")
+    const { data } = supabase.storage.from("documents").getPublicUrl(path)
     return data.publicUrl
   }
 

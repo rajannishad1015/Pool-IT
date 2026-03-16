@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/profile_providers.dart';
+import '../../core/providers/map_providers.dart';
 import 'widgets/home_bottom_panel.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -14,14 +16,50 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
   final LatLng _defaultCenter = const LatLng(19.0760, 72.8777); // Mumbai
-  LatLng? _currentCenter;
+  LatLng? _deviceLocation;
   Set<Marker> _markers = {};
+  Set<Polyline> _polylines = {};
 
   @override
-  void dispose() {
-    super.dispose();
+  void initState() {
+    super.initState();
+    _fetchDeviceLocation();
+  }
+
+  Future<void> _fetchDeviceLocation() async {
+    try {
+      // On web, checkPermission() returns 'denied' until requestPermission() is called
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        debugPrint('Location: permission denied');
+        return;
+      }
+
+      // Use simple getCurrentPosition without LocationSettings for web compatibility
+      final pos = await Geolocator.getCurrentPosition();
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      debugPrint('Location: Got position ${pos.latitude}, ${pos.longitude}');
+
+      if (mounted) {
+        setState(() => _deviceLocation = latLng);
+        // Animate map to real location
+        mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(target: latLng, zoom: 14.0),
+          ),
+        );
+        // Set origin in route provider
+        ref.read(mapRouteProvider).setOrigin(latLng);
+      }
+    } catch (e) {
+      debugPrint('Location ERROR: $e');
+    }
   }
 
   final String _mapStyle = '''
@@ -41,22 +79,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    
-    // Initialize _currentCenter after map is created and profile is available
     final profileAsync = ref.read(userProfileProvider);
     if (profileAsync.hasValue && profileAsync.value != null) {
       final profile = profileAsync.value!;
       if (profile['latitude'] != null && profile['longitude'] != null) {
-        _currentCenter = LatLng(
+        final loc = LatLng(
           (profile['latitude'] as num).toDouble(),
           (profile['longitude'] as num).toDouble(),
         );
-        _generateNearbyDrivers(_currentCenter!);
-        mapController.animateCamera(CameraUpdate.newLatLng(_currentCenter!));
+        mapController?.animateCamera(CameraUpdate.newLatLng(loc));
+        return;
       }
-    } else {
-      _generateNearbyDrivers(_defaultCenter);
     }
+    _generateNearbyDrivers(_deviceLocation ?? _defaultCenter);
   }
 
   void _generateNearbyDrivers(LatLng center) {
@@ -75,44 +110,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  /// Called when route notifier changes — builds markers & polyline.
+  void _buildRoute(RouteNotifier route) {
+    if (!route.hasRoute) {
+      // No route — show nearby driver pins
+      _generateNearbyDrivers(_deviceLocation ?? _defaultCenter);
+      setState(() => _polylines = {});
+      return;
+    }
+
+    final origin = route.origin!;
+    final dest = route.destination!;
+
+    setState(() {
+      _markers = {
+        // Origin marker (green)
+        Marker(
+          markerId: const MarkerId('origin'),
+          position: origin,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Your Location'),
+          zIndexInt: 2,
+        ),
+        // Destination marker (red)
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: dest,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: InfoWindow(title: route.destinationName ?? 'Destination'),
+          zIndexInt: 2,
+        ),
+      };
+
+      _polylines = {
+        Polyline(
+          polylineId: const PolylineId('route'),
+          points: [origin, dest],
+          color: AppColors.accentCoral,
+          width: 4,
+          patterns: [PatternItem.dash(30), PatternItem.gap(15)],
+        ),
+      };
+    });
+
+    // Fit camera to show both pins with padding
+    final bounds = LatLngBounds(
+      southwest: LatLng(
+        origin.latitude < dest.latitude ? origin.latitude : dest.latitude,
+        origin.longitude < dest.longitude ? origin.longitude : dest.longitude,
+      ),
+      northeast: LatLng(
+        origin.latitude > dest.latitude ? origin.latitude : dest.latitude,
+        origin.longitude > dest.longitude ? origin.longitude : dest.longitude,
+      ),
+    );
+    mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 80),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Listen to userProfileProvider for location changes
-    ref.listen<AsyncValue<Map<String, dynamic>?>>(userProfileProvider, (previous, next) {
+    // Listen to profile location changes
+    ref.listen<AsyncValue<Map<String, dynamic>?>>(userProfileProvider,
+        (previous, next) {
       final profile = next.value;
-      final previousProfile = previous?.value;
-
-      final hasLocation = profile?['latitude'] != null && profile?['longitude'] != null;
-      final prevHasLocation = previousProfile?['latitude'] != null && previousProfile?['longitude'] != null;
+      final prevProfile = previous?.value;
+      final hasLocation =
+          profile?['latitude'] != null && profile?['longitude'] != null;
+      final prevHasLocation =
+          prevProfile?['latitude'] != null && prevProfile?['longitude'] != null;
 
       if (hasLocation &&
-          (previousProfile == null ||
+          (prevProfile == null ||
               !prevHasLocation ||
-              previousProfile['latitude'] != profile?['latitude'] ||
-              previousProfile['longitude'] != profile?['longitude'])) {
-        _currentCenter = LatLng(
+              prevProfile['latitude'] != profile?['latitude'] ||
+              prevProfile['longitude'] != profile?['longitude'])) {
+        final loc = LatLng(
           (profile!['latitude'] as num).toDouble(),
           (profile['longitude'] as num).toDouble(),
         );
-        mapController.animateCamera(CameraUpdate.newLatLng(_currentCenter!));
+        mapController?.animateCamera(CameraUpdate.newLatLng(loc));
       }
     });
+
+    // React to route state changes
+    ref.listen<RouteNotifier>(mapRouteProvider, (_, next) {
+      _buildRoute(next);
+    });
+
+    final routeState = ref.watch(mapRouteProvider);
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Map Interface (Full background)
+          // 1. Map (Full background)
           Positioned.fill(
             child: GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
-                target: _currentCenter ?? _defaultCenter,
+                target: _deviceLocation ?? _defaultCenter,
                 zoom: 13.0,
               ),
               zoomControlsEnabled: false,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               markers: _markers,
+              polylines: _polylines,
               style: _mapStyle,
             ),
           ),
@@ -128,7 +232,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
                   children: [
-                    // Profile/Greeting Section
                     Consumer(
                       builder: (context, ref, child) {
                         final profile = ref.watch(userProfileProvider).value;
@@ -168,7 +271,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                     ),
                     const Spacer(),
-                    // Notification Bell
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -205,15 +307,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // 3. Map Controls (Zoom & Location)
+          // 3. Geocoding loading indicator
+          if (routeState.isGeocoding)
+            Positioned(
+              top: 110,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.accentCoral,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Finding location...', style: TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // 4. Map Controls (Zoom & Location)
           Positioned(
             right: 16,
-            bottom: 270, // Slightly adjusted for better alignment
+            bottom: 270,
             child: Column(
               children: [
                 _buildMapControl(
                   Icons.my_location_rounded,
-                  () {},
+                  () => _fetchDeviceLocation(),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -232,18 +372,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       _buildMapControl(
                         Icons.add_rounded,
-                        () {},
+                        () => mapController?.animateCamera(CameraUpdate.zoomIn()),
                         isGrouped: true,
                         isTop: true,
                       ),
-                      Container(
-                        width: 24,
-                        height: 1,
-                        color: Colors.grey[200],
-                      ),
+                      Container(width: 24, height: 1, color: Colors.grey[200]),
                       _buildMapControl(
                         Icons.remove_rounded,
-                        () {},
+                        () => mapController?.animateCamera(CameraUpdate.zoomOut()),
                         isGrouped: true,
                         isBottom: true,
                       ),
@@ -254,7 +390,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // 4. Bottom Content & Actions (New Unified Panel)
+          // 5. Bottom Panel
           const Positioned(
             bottom: 0,
             left: 0,
@@ -280,7 +416,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           selectedItemColor: AppColors.accentCoral,
           unselectedItemColor: Colors.grey[400],
           currentIndex: 0,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+          selectedLabelStyle:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           onTap: (index) {
             if (index == 3) context.push('/wallet');
@@ -288,17 +425,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           },
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.directions_car), label: 'My Rides'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.directions_car), label: 'My Rides'),
             BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pool'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), label: 'Wallet'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                label: 'Wallet'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline), label: 'Profile'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMapControl(IconData icon, VoidCallback onTap, {bool isGrouped = false, bool isTop = false, bool isBottom = false}) {
+  Widget _buildMapControl(
+    IconData icon,
+    VoidCallback onTap, {
+    bool isGrouped = false,
+    bool isTop = false,
+    bool isBottom = false,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -306,12 +453,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         height: 44,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: isGrouped 
-            ? BorderRadius.vertical(
-                top: isTop ? const Radius.circular(12) : Radius.zero,
-                bottom: isBottom ? const Radius.circular(12) : Radius.zero,
-              )
-            : BorderRadius.circular(12),
+          borderRadius: isGrouped
+              ? BorderRadius.vertical(
+                  top: isTop ? const Radius.circular(12) : Radius.zero,
+                  bottom: isBottom ? const Radius.circular(12) : Radius.zero,
+                )
+              : BorderRadius.circular(12),
           boxShadow: isGrouped && !isTop
               ? null
               : [
@@ -326,5 +473,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
 }
