@@ -52,3 +52,25 @@ final rideByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((r
 
   return response;
 });
+
+/// Provider to fetch a single ride request by its ID with driver details
+final rideRequestByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, requestId) async {
+  final supabase = ref.watch(supabaseClientProvider);
+
+  final response = await supabase
+      .from('ride_requests')
+      .select('''
+        *,
+        profiles:driver_id (
+          full_name,
+          avatar_url,
+          trust_score,
+          phone_number,
+          last_lat_lng
+        )
+      ''')
+      .eq('id', requestId)
+      .maybeSingle();
+
+  return response;
+});

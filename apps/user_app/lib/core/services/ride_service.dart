@@ -175,14 +175,14 @@ class RideService {
   }
 
   /// Returns the latest request status: pending, accepted, rejected, cancelled, timed_out.
-  Future<String?> getRideRequestStatus(String requestId) async {
+  Future<Map<String, dynamic>?> getRideRequestStatus(String requestId) async {
     try {
       final response = await _client
           .from(_rideRequestTable)
-          .select('status')
+          .select('status, driver_id')
           .eq('id', requestId)
           .maybeSingle();
-      return response?['status'] as String?;
+      return response;
     } catch (e) {
       debugPrint('RideService: getRideRequestStatus error: $e');
       return null;

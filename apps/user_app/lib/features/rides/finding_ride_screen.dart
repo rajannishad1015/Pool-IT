@@ -112,21 +112,24 @@ class _FindingRideScreenState extends ConsumerState<FindingRideScreen> {
       if (!mounted) return;
 
       final rideService = ref.read(rideServiceProvider);
-      final status = await rideService.getRideRequestStatus(requestId);
-      if (status == null) return;
+      final requestData = await rideService.getRideRequestStatus(requestId);
+      if (requestData == null) return;
 
-      if (!mounted) return;
+      final status = requestData['status'] as String?;
+      final driverId = requestData['driver_id'] as String?;
+
+      if (!mounted || status == null) return;
       setState(() => _status = status);
 
-      if (status == 'accepted') {
-        await _onAccepted();
+      if (status == 'accepted' && driverId != null) {
+        await _onAccepted(driverId);
       } else if (status == 'rejected') {
         _onRejected();
       }
     });
   }
 
-  Future<void> _onAccepted() async {
+  Future<void> _onAccepted(String driverId) async {
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
 
@@ -136,7 +139,11 @@ class _FindingRideScreenState extends ConsumerState<FindingRideScreen> {
     );
 
     context.go(
-      '/rides?destination=${Uri.encodeComponent(widget.destination)}&mode=${widget.mode}',
+      '/active-ride',
+      extra: {
+        'rideId': _requestId,
+        'driverId': driverId,
+      },
     );
   }
 

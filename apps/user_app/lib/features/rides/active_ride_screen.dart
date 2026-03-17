@@ -86,7 +86,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   @override
   Widget build(BuildContext context) {
     final driverLocationAsync = ref.watch(driverLocationProvider(widget.driverId));
-    final rideAsync = ref.watch(rideByIdProvider(widget.rideId));
+    final rideAsync = ref.watch(rideRequestByIdProvider(widget.rideId));
 
     return Scaffold(
       body: Stack(
@@ -323,10 +323,22 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                                 child: const Text('No'),
                               ),
                               TextButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   Navigator.pop(context); // Close dialog
-                                  context.pop(); // Go back
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
+                                  
+                                  // Call Supabase to cancel
+                                  final rideService = ref.read(rideServiceProvider);
+                                  await rideService.updateRideRequestStatus(
+                                    requestId: widget.rideId, 
+                                    status: 'cancelled'
+                                  );
+
+                                  if (context.mounted) {
+                                    context.go('/home'); // Go to home after cancel
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Ride cancelled'))
+                                    );
+                                  }
                                 },
                                 child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
                               ),
