@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/tracking_providers.dart';
 import '../../core/providers/ride_providers.dart';
@@ -166,8 +167,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 _buildCircleButton(
                   Icons.sos,
                   color: AppColors.accentCoral,
-                  onTap: () {
-                    // SOS Logic
+                  onTap: () async {
+                    final Uri uri = Uri.parse('tel:112');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch phone dialer')));
+                    }
                   },
                 ),
               ],
@@ -245,9 +251,35 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                           ],
                         ),
                       ),
-                      _buildActionCircle(Icons.message, onTap: () {}),
+                      _buildActionCircle(Icons.message, onTap: () async {
+                        final driver = rideAsync.value?['profiles'] as Map<String, dynamic>?;
+                        final phone = driver?['phone_number'] ?? driver?['phone'];
+                        if (phone != null && phone.isNotEmpty) {
+                          final Uri uri = Uri.parse('sms:$phone');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                            return;
+                          }
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Messaging not available')));
+                        }
+                      }),
                       const SizedBox(width: 12),
-                      _buildActionCircle(Icons.call, onTap: () {}),
+                      _buildActionCircle(Icons.call, onTap: () async {
+                        final driver = rideAsync.value?['profiles'] as Map<String, dynamic>?;
+                        final phone = driver?['phone_number'] ?? driver?['phone'];
+                        if (phone != null && phone.isNotEmpty) {
+                          final Uri uri = Uri.parse('tel:$phone');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                            return;
+                          }
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Calling not available')));
+                        }
+                      }),
                     ],
                   ),
                   const Divider(color: Colors.white10, height: 32),
@@ -280,7 +312,27 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Cancel Logic
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Cancel Ride?'),
+                            content: const Text('Are you sure you want to cancel this ride? A cancellation fee may apply.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('No'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context); // Close dialog
+                                  context.pop(); // Go back
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride cancelled')));
+                                },
+                                child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withValues(alpha: 0.1),

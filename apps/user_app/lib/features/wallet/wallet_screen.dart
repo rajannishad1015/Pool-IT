@@ -110,7 +110,9 @@ class WalletScreen extends ConsumerWidget {
             children: [
               _buildActionButton(Icons.add_circle_outline, 'Add Money', () => _showAddMoneyDialog(context, ref)),
               const SizedBox(width: 16),
-              _buildActionButton(Icons.file_download_outlined, 'Withdraw', () {}),
+              _buildActionButton(Icons.file_download_outlined, 'Withdraw', () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Withdrawal feature coming soon!')));
+              }),
             ],
           ),
         ],

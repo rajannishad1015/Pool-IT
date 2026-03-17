@@ -28,15 +28,15 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 26),
                     _buildSectionTitle('Account'),
                     _buildSettingsCard([
-                      _buildProfileTile(Icons.person_outline, 'Edit Profile'),
-                      _buildProfileTile(Icons.verified_user_outlined, 'ID Verification', trail: _buildPendingBadge(profile?['is_verified'] ?? false)),
-                      _buildProfileTile(Icons.directions_car_outlined, 'My Vehicle'),
+                      _buildProfileTile(context, Icons.person_outline, 'Edit Profile'),
+                      _buildProfileTile(context, Icons.verified_user_outlined, 'ID Verification', trail: _buildPendingBadge(profile?['is_verified'] ?? false)),
+                      _buildProfileTile(context, Icons.directions_car_outlined, 'My Vehicle'),
                     ]),
                     const SizedBox(height: 24),
                     _buildSectionTitle('Support & Legal'),
                     _buildSettingsCard([
-                      _buildProfileTile(Icons.help_outline, 'Help Center'),
-                      _buildProfileTile(Icons.info_outline, 'About SmartPool'),
+                      _buildProfileTile(context, Icons.help_outline, 'Help Center'),
+                      _buildProfileTile(context, Icons.info_outline, 'About SmartPool'),
                     ]),
                     const SizedBox(height: 32),
                     Padding(
@@ -311,7 +311,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileTile(IconData icon, String title, {Widget? trail}) {
+  Widget _buildProfileTile(BuildContext context, IconData icon, String title, {Widget? trail}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       leading: Container(
@@ -331,7 +331,11 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       trailing: trail ?? const Icon(Icons.chevron_right, size: 20),
-      onTap: () {},
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$title feature coming soon!')),
+        );
+      },
     );
   }
 

@@ -3,10 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/map_providers.dart';
 import '../../../core/services/geocoding_service.dart';
-import '../../../shared/widgets/primary_button.dart';
 
 class HomeBottomPanel extends ConsumerStatefulWidget {
   final String currentLocationLabel;
@@ -70,9 +68,9 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: AppColors.accentCoral,
+              primary: Colors.black,
               onPrimary: Colors.white,
-              onSurface: AppColors.primaryNavy,
+              onSurface: Colors.black,
             ),
           ),
           child: child!,
@@ -94,9 +92,9 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: AppColors.accentCoral,
+              primary: Colors.black,
               onPrimary: Colors.white,
-              onSurface: AppColors.primaryNavy,
+              onSurface: Colors.black,
             ),
           ),
           child: child!,
@@ -120,7 +118,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF121212),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -172,31 +170,51 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 children: [
                   const Text(
                     'Where to?',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: tempController,
                     autofocus: true,
                     textInputAction: TextInputAction.done,
+                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'Enter destination...',
-                      prefixIcon: const Icon(Icons.location_on, color: Colors.redAccent),
+                      hintStyle: const TextStyle(color: Color(0xFF9A9A9A)),
+                      prefixIcon: const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                      ),
                       suffixIcon: isLoadingSuggestions
                           ? const Padding(
                               padding: EdgeInsets.all(12),
                               child: SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               ),
                             )
                           : null,
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: const Color(0xFF1A1A1A),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                        borderSide: const BorderSide(color: Color(0xFF414141)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF414141)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                     ),
                     onChanged: (value) {
@@ -226,24 +244,26 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                       margin: const EdgeInsets.only(top: 10),
                       constraints: const BoxConstraints(maxHeight: 210),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: const Color(0xFF151515),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.black12),
+                        border: Border.all(color: const Color(0xFF3C3C3C)),
                       ),
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: suggestions.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        separatorBuilder: (_, _) =>
+                            const Divider(height: 1, color: Color(0xFF2E2E2E)),
                         itemBuilder: (context, index) {
                           final item = suggestions[index];
                           return ListTile(
                             dense: true,
                             leading: const Icon(
                               Icons.place_outlined,
-                              color: AppColors.accentCoral,
+                              color: Colors.white,
                             ),
                             title: Text(
                               item.label,
+                              style: const TextStyle(color: Colors.white),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -253,7 +273,9 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                                 _routePreviewReady = false;
                               });
 
-                              ref.read(mapRouteProvider).setDestinationFromCoordinates(
+                              ref
+                                  .read(mapRouteProvider)
+                                  .setDestinationFromCoordinates(
                                     destinationName: item.label,
                                     destination: item.location,
                                   );
@@ -274,21 +296,22 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.backgroundLight,
+                        color: const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF393939)),
                       ),
                       child: const Text(
                         'No suggestions found. Press Confirm to search this destination.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.primaryNavy,
+                          color: Color(0xFFB9B9B9),
                         ),
                       ),
                     ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    child: PrimaryButton(
+                    child: _buildActionButton(
                       text: 'Confirm',
                       onPressed: () {
                         final destination = tempController.text.trim();
@@ -339,7 +362,8 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
       return;
     }
 
-    final alreadySelected = routeNotifier.destination != null &&
+    final alreadySelected =
+        routeNotifier.destination != null &&
         routeNotifier.destinationName == destination;
 
     setState(() => _isSubmitting = true);
@@ -356,7 +380,9 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
     if (routeNotifier.destination == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Only Mumbai destinations are supported. Please enter a Mumbai location.'),
+          content: Text(
+            'Only Mumbai destinations are supported. Please enter a Mumbai location.',
+          ),
         ),
       );
       return;
@@ -400,7 +426,6 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
   }
 
   void _goToResults(String destination, {required bool isPoolMode}) {
-
     final dateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -409,13 +434,12 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
       _selectedTime.minute,
     );
 
-    context.push(
+    context.go(
       Uri(
-        path: '/rides',
+        path: '/finding-ride',
         queryParameters: {
           'destination': destination,
-          'date': dateTime.toIso8601String(),
-          'time': _selectedTime.format(context),
+          'scheduledAt': dateTime.toIso8601String(),
           'mode': isPoolMode ? 'pool' : 'ride',
         },
       ).toString(),
@@ -435,16 +459,13 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFDFEFF),
-            Color(0xFFF7FAFE),
-          ],
+          colors: [Color(0xFF121212), Color(0xFF0D0D0D)],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border.all(color: const Color(0xFFE6ECF5)),
+        border: Border.all(color: const Color(0xFF2E2E2E)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: 0.24),
             blurRadius: 24,
             offset: const Offset(0, -10),
           ),
@@ -460,7 +481,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: const Color(0xFF5A5A5A),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -473,7 +494,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
               fontSize: 32 / 2,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
-              color: AppColors.primaryNavy,
+              color: Colors.white,
             ),
           ),
           Text(
@@ -482,7 +503,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 : 'Set your destination and departure time.',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.primaryNavy.withValues(alpha: 0.6),
+              color: const Color(0xFFAEAEAE),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -491,7 +512,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
           _buildInput(
             onTap: widget.onRefreshLocation,
             icon: Icons.radio_button_checked,
-            iconColor: Colors.orange,
+            iconColor: Colors.white,
             text: widget.currentLocationLabel,
             isPlaceholder: false,
             trailing: widget.isRefreshingLocation
@@ -500,12 +521,12 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.accentCoral,
+                      color: Colors.white,
                     ),
                   )
                 : const Icon(
                     Icons.my_location_rounded,
-                    color: AppColors.trustBlue,
+                    color: Colors.white,
                     size: 18,
                   ),
           ),
@@ -513,14 +534,14 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
           _buildInput(
             onTap: _showDestinationPicker,
             icon: Icons.location_on,
-            iconColor: Colors.redAccent,
+            iconColor: Colors.white,
             text: destinationText.isEmpty
                 ? 'Enter destination'
                 : destinationText,
             isPlaceholder: destinationText.isEmpty,
             trailing: const Icon(
               Icons.keyboard_arrow_right_rounded,
-              color: AppColors.grey,
+              color: Color(0xFFB8B8B8),
             ),
           ),
           const SizedBox(height: 10),
@@ -531,7 +552,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 child: _buildInput(
                   onTap: () => _selectDate(context),
                   icon: Icons.calendar_today_outlined,
-                  iconColor: AppColors.trustBlue,
+                  iconColor: Colors.white,
                   text: DateFormat('MMM dd, EEE').format(_selectedDate),
                   isPlaceholder: false,
                 ),
@@ -541,7 +562,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 child: _buildInput(
                   onTap: () => _selectTime(context),
                   icon: Icons.access_time,
-                  iconColor: AppColors.trustBlue,
+                  iconColor: Colors.white,
                   text: _selectedTime.format(context),
                   isPlaceholder: false,
                 ),
@@ -553,7 +574,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
           if (!_routePreviewReady)
             SizedBox(
               width: double.infinity,
-              child: PrimaryButton(
+              child: _buildActionButton(
                 text: 'Show Route',
                 isLoading: _isSubmitting || routeState.isGeocoding,
                 onPressed: _findRides,
@@ -563,7 +584,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
             Row(
               children: [
                 Expanded(
-                  child: PrimaryButton(
+                  child: _buildActionButton(
                     text: 'Find Rides',
                     isLoading: _isSubmitting || routeState.isGeocoding,
                     onPressed: _findRides,
@@ -571,9 +592,9 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: PrimaryButton(
+                  child: _buildActionButton(
                     text: 'Find Pool',
-                    color: const Color(0xFF143A6D),
+                    isSecondary: true,
                     onPressed: _findPool,
                   ),
                 ),
@@ -584,14 +605,12 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF191919),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.trustBlue.withValues(alpha: 0.18),
-                ),
+                border: Border.all(color: const Color(0xFF393939)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.trustBlue.withValues(alpha: 0.05),
+                    color: Colors.black.withValues(alpha: 0.18),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -601,7 +620,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                 children: [
                   const Icon(
                     Icons.route_rounded,
-                    color: AppColors.trustBlue,
+                    color: Colors.white,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -611,7 +630,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primaryNavy,
+                        color: Colors.white,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -655,7 +674,7 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: isPlaceholder ? Colors.blueGrey : AppColors.primaryNavy,
+              color: isPlaceholder ? const Color(0xFFA0A0A0) : Colors.white,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -673,20 +692,58 @@ class _HomeBottomPanelState extends ConsumerState<HomeBottomPanel> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE6ECF5)),
+          border: Border.all(color: const Color(0xFF363636)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Row(
-          children: rowChildren,
+        child: Row(children: rowChildren),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String text,
+    required VoidCallback onPressed,
+    bool isLoading = false,
+    bool isSecondary = false,
+  }) {
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSecondary ? const Color(0xFF1C1C1C) : Colors.white,
+          foregroundColor: isSecondary ? Colors.white : Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isSecondary ? const Color(0xFF474747) : Colors.white,
+            ),
+          ),
         ),
+        child: isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: isSecondary ? Colors.white : Colors.black,
+                ),
+              )
+            : Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ),
     );
   }

@@ -96,6 +96,7 @@ class GeocodingService {
   static Future<List<PlaceSuggestion>> _googleSuggestionFallback(
     String searchText,
   ) async {
+      if (kIsWeb) return [];
       try {
         final uri = Uri.parse(
           '$_baseUrl?address=${Uri.encodeComponent(searchText)}&key=$_apiKey&region=in&bounds=$_mumbaiMinLat,$_mumbaiMinLng|$_mumbaiMaxLat,$_mumbaiMaxLng',
@@ -148,6 +149,8 @@ class GeocodingService {
   static Future<LatLng?> geocodeAddress(String address) async {
     if (address.trim().isEmpty) return null;
 
+    if (kIsWeb) return _fallbackGeocodeAddress(address);
+
     try {
       final uri = Uri.parse(
         '$_baseUrl?address=${Uri.encodeComponent(address)}&key=$_apiKey',
@@ -188,6 +191,7 @@ class GeocodingService {
   /// Convert coordinates to a readable place label.
   /// Prefers locality/sub-locality and falls back to formatted address.
   static Future<String?> reverseGeocodeLatLng(LatLng coordinates) async {
+    if (kIsWeb) return _fallbackReverseGeocodeLatLng(coordinates);
     try {
       final uri = Uri.parse(
         '$_baseUrl?latlng=${coordinates.latitude},${coordinates.longitude}&key=$_apiKey',
@@ -261,6 +265,7 @@ class GeocodingService {
     required LatLng origin,
     required LatLng destination,
   }) async {
+    if (kIsWeb) return _fallbackRoutePath(origin: origin, destination: destination);
     try {
       final uri = Uri.parse(
         'https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving&key=$_apiKey',

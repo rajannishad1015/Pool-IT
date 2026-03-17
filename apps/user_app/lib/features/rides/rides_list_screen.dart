@@ -58,7 +58,9 @@ class RidesListScreen extends ConsumerWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Filter options coming soon!')));
+              },
               icon: const Icon(Icons.tune_rounded, color: AppColors.primaryNavy, size: 20),
             ),
           ),

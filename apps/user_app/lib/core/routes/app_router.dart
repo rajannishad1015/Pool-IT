@@ -9,6 +9,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/rides/rides_list_screen.dart';
 import '../../features/rides/ride_detail_screen.dart';
 import '../../features/rides/offer_ride_screen.dart';
+import '../../features/rides/finding_ride_screen.dart';
 import '../../features/bookings/booking_confirmation_screen.dart';
 import 'go_router_refresh_stream.dart';
 import '../../features/wallet/wallet_screen.dart';
@@ -18,11 +19,13 @@ import '../../features/rides/active_ride_screen.dart';
 final appRouter = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
+    refreshListenable: GoRouterRefreshStream(
+      SupabaseService.client.auth.onAuthStateChange,
+    ),
     redirect: (context, state) {
       final session = SupabaseService.client.auth.currentSession;
       final matchedPath = state.matchedLocation;
-      
+
       final isSplash = matchedPath == '/';
       final isLogin = matchedPath == '/login';
       final isEmailVerify = matchedPath == '/email-verification';
@@ -42,26 +45,19 @@ final appRouter = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/email-verification',
-        builder: (context, state) => EmailVerificationScreen(email: state.extra as String?),
+        builder: (context, state) =>
+            EmailVerificationScreen(email: state.extra as String?),
       ),
       GoRoute(
         path: '/otp-verification',
-        builder: (context, state) => OtpVerificationScreen(phone: state.extra as String),
+        builder: (context, state) =>
+            OtpVerificationScreen(phone: state.extra as String),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
-      ),
+      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/rides',
         builder: (context, state) => RidesListScreen(
@@ -70,8 +66,26 @@ final appRouter = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/finding-ride',
+        builder: (context, state) {
+          final destination = state.uri.queryParameters['destination'] ?? '';
+          final mode = state.uri.queryParameters['mode'] ?? 'ride';
+          final scheduledAtRaw = state.uri.queryParameters['scheduledAt'];
+          final scheduledAt = scheduledAtRaw != null
+              ? DateTime.tryParse(scheduledAtRaw)
+              : null;
+
+          return FindingRideScreen(
+            destination: destination,
+            mode: mode,
+            scheduledAt: scheduledAt,
+          );
+        },
+      ),
+      GoRoute(
         path: '/ride-detail',
-        builder: (context, state) => RideDetailScreen(ride: state.extra as Map<String, dynamic>?),
+        builder: (context, state) =>
+            RideDetailScreen(ride: state.extra as Map<String, dynamic>?),
       ),
       GoRoute(
         path: '/booking-confirmation',
