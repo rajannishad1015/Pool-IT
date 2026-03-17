@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/supabase_providers.dart';
 
@@ -1130,8 +1131,54 @@ class _BankDetailsScreenState extends ConsumerState<BankDetailsScreen> {
   }
 }
 
-class VerificationPendingScreen extends StatelessWidget {
+class VerificationPendingScreen extends ConsumerStatefulWidget {
   const VerificationPendingScreen({super.key});
+
+  @override
+  ConsumerState<VerificationPendingScreen> createState() => _VerificationPendingScreenState();
+}
+
+class _VerificationPendingScreenState extends ConsumerState<VerificationPendingScreen> {
+  RealtimeChannel? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupRealtimeListener();
+  }
+
+  void _setupRealtimeListener() {
+    final userId = ref.read(currentUserProvider)?.id;
+    if (userId == null) return;
+
+    _subscription = ref.read(supabaseClientProvider)
+        .channel('public:drivers:id=eq.$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'drivers',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: userId,
+          ),
+          callback: (payload) {
+            final newStatus = payload.newRecord['verification_status'];
+            if (newStatus == 'verified' && mounted) {
+              context.go('/main');
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_subscription != null) {
+      ref.read(supabaseClientProvider).removeChannel(_subscription!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1176,8 +1223,7 @@ class VerificationPendingScreen extends StatelessWidget {
             const SizedBox(height: 80),
             OutlinedButton(
               onPressed: () {
-                // Return to Splash or Login
-                 context.go('/splash');
+                context.go('/splash');
               },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.primaryEmerald),

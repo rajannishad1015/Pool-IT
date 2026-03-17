@@ -6,7 +6,21 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/profile_providers.dart';
 import '../../core/providers/map_providers.dart';
+import '../../core/providers/tracking_providers.dart';
+import '../../core/services/geocoding_service.dart';
 import 'widgets/home_bottom_panel.dart';
+
+/// Returns greeting based on current time
+String getTimeBasedGreeting() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) {
+    return 'Good morning,';
+  } else if (hour < 17) {
+    return 'Good afternoon,';
+  } else {
+    return 'Good evening,';
+  }
+}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,8 +33,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? mapController;
   final LatLng _defaultCenter = const LatLng(19.0760, 72.8777); // Mumbai
   LatLng? _deviceLocation;
+  String _currentLocationLabel = 'Detecting current location...';
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
+  bool _isFetchingLocation = false;
+  String _lastRouteSignature = '';
+
+  String _routeSignature(RouteNotifier route) {
+    final origin = route.origin;
+    final destination = route.destination;
+    return [
+      origin?.latitude.toStringAsFixed(6) ?? 'none',
+      origin?.longitude.toStringAsFixed(6) ?? 'none',
+      destination?.latitude.toStringAsFixed(6) ?? 'none',
+      destination?.longitude.toStringAsFixed(6) ?? 'none',
+      route.routePoints.length.toString(),
+    ].join('|');
+  }
 
   @override
   void initState() {
@@ -29,36 +58,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _fetchDeviceLocation() async {
+    if (_isFetchingLocation) return; // Prevent multiple calls
+
+    setState(() => _isFetchingLocation = true);
+
     try {
-      // On web, checkPermission() returns 'denied' until requestPermission() is called
+      // Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enable location services.')),
+          );
+        }
+        return;
+      }
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) {
-        debugPrint('Location: permission denied');
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied. Please enable it in settings.')),
+          );
+        }
+        return;
+      }
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission required.')),
+          );
+        }
         return;
       }
 
-      // Use simple getCurrentPosition without LocationSettings for web compatibility
-      final pos = await Geolocator.getCurrentPosition();
+      // Get current position with timeout
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
       final latLng = LatLng(pos.latitude, pos.longitude);
       debugPrint('Location: Got position ${pos.latitude}, ${pos.longitude}');
 
       if (mounted) {
-        setState(() => _deviceLocation = latLng);
+        setState(() {
+          _deviceLocation = latLng;
+          _currentLocationLabel = 'Fetching location name...';
+        });
         // Animate map to real location
         mapController?.animateCamera(
           CameraUpdate.newCameraPosition(
-            CameraPosition(target: latLng, zoom: 14.0),
+            CameraPosition(target: latLng, zoom: 15.0),
           ),
         );
         // Set origin in route provider
         ref.read(mapRouteProvider).setOrigin(latLng);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location updated'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      final placeLabel = await GeocodingService.reverseGeocodeLatLng(latLng);
+      if (mounted) {
+        setState(() {
+          _currentLocationLabel =
+              (placeLabel == null || placeLabel.trim().isEmpty)
+                  ? 'Current Location'
+                  : placeLabel;
+        });
       }
     } catch (e) {
       debugPrint('Location ERROR: $e');
+      if (mounted) {
+        if (_deviceLocation != null) {
+          setState(() => _currentLocationLabel = 'Current Location');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Location error: ${e.toString().split(':').last}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFetchingLocation = false);
+      }
     }
   }
 
@@ -91,36 +182,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
     }
-    _generateNearbyDrivers(_deviceLocation ?? _defaultCenter);
+    _loadOnlineDrivers();
   }
 
-  void _generateNearbyDrivers(LatLng center) {
-    setState(() {
-      _markers = List.generate(5, (index) {
-        return Marker(
-          markerId: MarkerId('driver_$index'),
-          position: LatLng(
-            center.latitude + (0.002 * (index - 2)),
-            center.longitude + (0.002 * (index % 2 == 0 ? 1 : -1)),
-          ),
+  /// Fetch and display real online drivers from database
+  Future<void> _loadOnlineDrivers() async {
+    final driversAsync = await ref.read(onlineDriversProvider.future);
+    if (driversAsync.isEmpty) {
+      // No online drivers - show empty state
+      setState(() => _markers = {});
+      return;
+    }
+
+    final markers = <Marker>{};
+    for (int i = 0; i < driversAsync.length; i++) {
+      final driver = driversAsync[i];
+      final profile = driver['profiles'] as Map<String, dynamic>?;
+      final lastLatLng = profile?['last_lat_lng'] as String?;
+      final driverName = profile?['full_name'] ?? 'Driver';
+
+      final location = parseLatLng(lastLatLng);
+      if (location != null) {
+        markers.add(Marker(
+          markerId: MarkerId('driver_${driver['id']}'),
+          position: location,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: const InfoWindow(title: 'Nearby Driver'),
-        );
-      }).toSet();
-    });
+          infoWindow: InfoWindow(title: driverName),
+        ));
+      }
+    }
+
+    if (mounted) {
+      setState(() => _markers = markers);
+    }
   }
 
   /// Called when route notifier changes — builds markers & polyline.
   void _buildRoute(RouteNotifier route) {
     if (!route.hasRoute) {
-      // No route — show nearby driver pins
-      _generateNearbyDrivers(_deviceLocation ?? _defaultCenter);
+      // No route — show online drivers
+      _loadOnlineDrivers();
       setState(() => _polylines = {});
       return;
     }
 
     final origin = route.origin!;
     final dest = route.destination!;
+    final pathPoints =
+      route.routePoints.isNotEmpty ? route.routePoints : <LatLng>[origin, dest];
 
     setState(() {
       _markers = {
@@ -145,24 +254,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _polylines = {
         Polyline(
           polylineId: const PolylineId('route'),
-          points: [origin, dest],
+          points: pathPoints,
           color: AppColors.accentCoral,
-          width: 4,
-          patterns: [PatternItem.dash(30), PatternItem.gap(15)],
+          width: 5,
         ),
       };
     });
 
     // Fit camera to show both pins with padding
+    double minLat = pathPoints.first.latitude;
+    double maxLat = pathPoints.first.latitude;
+    double minLng = pathPoints.first.longitude;
+    double maxLng = pathPoints.first.longitude;
+
+    for (final point in pathPoints) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+
     final bounds = LatLngBounds(
-      southwest: LatLng(
-        origin.latitude < dest.latitude ? origin.latitude : dest.latitude,
-        origin.longitude < dest.longitude ? origin.longitude : dest.longitude,
-      ),
-      northeast: LatLng(
-        origin.latitude > dest.latitude ? origin.latitude : dest.latitude,
-        origin.longitude > dest.longitude ? origin.longitude : dest.longitude,
-      ),
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
     );
     mapController?.animateCamera(
       CameraUpdate.newLatLngBounds(bounds, 80),
@@ -194,12 +308,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
-    // React to route state changes
-    ref.listen<RouteNotifier>(mapRouteProvider, (_, next) {
-      _buildRoute(next);
-    });
-
     final routeState = ref.watch(mapRouteProvider);
+    final routeSignature = _routeSignature(routeState);
+
+    if (_lastRouteSignature != routeSignature) {
+      _lastRouteSignature = routeSignature;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _buildRoute(routeState);
+      });
+    }
 
     return Scaffold(
       body: Stack(
@@ -218,6 +336,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               markers: _markers,
               polylines: _polylines,
               style: _mapStyle,
+            ),
+          ),
+
+          // Atmospheric top fade for depth and readability
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.primaryNavy.withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -252,9 +392,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Good morning,',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                Text(
+                                  getTimeBasedGreeting(),
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
                                 Text(
                                   name,
@@ -272,14 +412,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(9),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white.withValues(alpha: 0.96),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 14,
                           ),
                         ],
                       ),
@@ -351,15 +492,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             bottom: 270,
             child: Column(
               children: [
-                _buildMapControl(
-                  Icons.my_location_rounded,
-                  () => _fetchDeviceLocation(),
-                ),
+                // Location button with loading state
+                _isFetchingLocation
+                    ? Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.accentCoral,
+                            ),
+                          ),
+                        ),
+                      )
+                    : _buildMapControl(
+                        Icons.my_location_rounded,
+                        () => _fetchDeviceLocation(),
+                      ),
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.1),
@@ -391,49 +561,143 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
 
           // 5. Bottom Panel
-          const Positioned(
+          Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: HomeBottomPanel(),
+            child: HomeBottomPanel(
+              currentLocationLabel: _currentLocationLabel,
+              isRefreshingLocation: _isFetchingLocation,
+              onRefreshLocation: _fetchDeviceLocation,
+            ),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6F8FC),
+            border: Border(
+              top: BorderSide(color: Color(0xFFE7EDF6)),
             ),
-          ],
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.98),
+                  const Color(0xFFF7F9FD).withValues(alpha: 0.98),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE2E9F3)),
+            ),
+            child: Row(
+              children: [
+                _buildNavItem(
+                  label: 'Home',
+                  icon: Icons.home_rounded,
+                  isActive: true,
+                  onTap: () => context.go('/home'),
+                ),
+                _buildNavItem(
+                  label: 'My Rides',
+                  icon: Icons.directions_car_rounded,
+                  onTap: () => context.push('/rides?mode=ride'),
+                ),
+                _buildNavItem(
+                  label: 'Pool',
+                  icon: Icons.people_alt_rounded,
+                  onTap: () => context.push('/rides?mode=pool'),
+                ),
+                _buildNavItem(
+                  label: 'Wallet',
+                  icon: Icons.account_balance_wallet_outlined,
+                  onTap: () => context.push('/wallet'),
+                ),
+                _buildNavItem(
+                  label: 'Profile',
+                  icon: Icons.person_outline_rounded,
+                  onTap: () => context.push('/profile'),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.accentCoral,
-          unselectedItemColor: Colors.grey[400],
-          currentIndex: 0,
-          selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          onTap: (index) {
-            if (index == 3) context.push('/wallet');
-            if (index == 4) context.push('/profile');
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.directions_car), label: 'My Rides'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pool'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.account_balance_wallet_outlined),
-                label: 'Wallet'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: 'Profile'),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: 36,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppColors.accentCoral.withValues(alpha: 0.14)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isActive
+                        ? AppColors.accentCoral.withValues(alpha: 0.22)
+                        : Colors.transparent,
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: isActive ? AppColors.accentCoral : Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                  color: isActive ? AppColors.accentCoral : Colors.grey[500],
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.only(top: 3),
+                width: isActive ? 14 : 0,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: AppColors.accentCoral,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

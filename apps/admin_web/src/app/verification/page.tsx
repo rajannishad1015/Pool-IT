@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
 export default function VerificationQueuePage() {
+  const supabase = createClient()
   const queryClient = useQueryClient()
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   
@@ -103,6 +104,14 @@ export default function VerificationQueuePage() {
       
       if (driverError) throw driverError
 
+      // 1.1 Update Profile to Verified
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ is_verified: true })
+        .eq("id", driverId)
+      
+      if (profileError) throw profileError
+
       // 2. Mark all documents as verified
       const { error: docsError } = await supabase
         .from("driver_documents")
@@ -111,6 +120,10 @@ export default function VerificationQueuePage() {
         .eq("status", "pending")
       
       if (docsError) throw docsError
+    },
+    onError: (error) => {
+      console.error("Instant Verify Error:", error);
+      alert(`Failed to verify driver: ${error.message}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-drivers"] })

@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+
+/// Formats a date relative to today (Today, Tomorrow, or day name/date)
+String formatRelativeDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final targetDate = DateTime(date.year, date.month, date.day);
+  final diff = targetDate.difference(today).inDays;
+
+  if (diff == 0) {
+    return 'Today';
+  } else if (diff == 1) {
+    return 'Tomorrow';
+  } else if (diff < 7) {
+    return DateFormat('EEEE').format(date); // Day name like "Monday"
+  } else {
+    return DateFormat('MMM d').format(date); // Like "Mar 15"
+  }
+}
 
 class RideCard extends StatelessWidget {
   final Map<String, dynamic> ride;
@@ -162,7 +181,7 @@ class RideCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'Today', // In reality handle dynamic date string
+                        formatRelativeDate(departureTime),
                         style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
                       ),
                     ],

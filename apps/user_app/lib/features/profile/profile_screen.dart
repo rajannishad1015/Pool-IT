@@ -14,6 +14,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FC),
       body: profileAsync.when(
         data: (profile) => CustomScrollView(
           slivers: [
@@ -23,16 +24,20 @@ class ProfileScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    _buildStatsRow(profile),
-                    const SizedBox(height: 32),
+                    _buildStatsRow(profile, ref),
+                    const SizedBox(height: 26),
                     _buildSectionTitle('Account'),
-                    _buildProfileTile(Icons.person_outline, 'Edit Profile'),
-                    _buildProfileTile(Icons.verified_user_outlined, 'ID Verification', trail: _buildPendingBadge(profile?['is_verified'] ?? false)),
-                    _buildProfileTile(Icons.directions_car_outlined, 'My Vehicle'),
+                    _buildSettingsCard([
+                      _buildProfileTile(Icons.person_outline, 'Edit Profile'),
+                      _buildProfileTile(Icons.verified_user_outlined, 'ID Verification', trail: _buildPendingBadge(profile?['is_verified'] ?? false)),
+                      _buildProfileTile(Icons.directions_car_outlined, 'My Vehicle'),
+                    ]),
                     const SizedBox(height: 24),
                     _buildSectionTitle('Support & Legal'),
-                    _buildProfileTile(Icons.help_outline, 'Help Center'),
-                    _buildProfileTile(Icons.info_outline, 'About SmartPool'),
+                    _buildSettingsCard([
+                      _buildProfileTile(Icons.help_outline, 'Help Center'),
+                      _buildProfileTile(Icons.info_outline, 'About SmartPool'),
+                    ]),
                     const SizedBox(height: 32),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -42,14 +47,14 @@ class ProfileScreen extends ConsumerWidget {
                           await authService.signOut();
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: AppColors.accentCoral,
+                          side: BorderSide(color: AppColors.accentCoral.withValues(alpha: 0.6)),
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Logout'),
+                        child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                     const SizedBox(height: 48),
@@ -66,15 +71,35 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildSliverHeader(BuildContext context, WidgetRef ref, Map<String, dynamic>? profile) {
+    final statsAsync = ref.watch(userStatsProvider);
+    final rideCount = statsAsync.maybeWhen(
+      data: (stats) => stats['rides'] as int,
+      orElse: () => 0,
+    );
+    final rideLabel = rideCount == 0
+        ? '(New User)'
+        : '($rideCount ${rideCount == 1 ? 'ride' : 'rides'})';
+
     return SliverAppBar(
       expandedHeight: 220,
       pinned: true,
+      backgroundColor: AppColors.primaryNavy,
+      foregroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [AppColors.primaryNavy, AppColors.trustBlue],
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryNavy.withValues(alpha: 0.25),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -112,7 +137,12 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               Text(
                 profile?['full_name'] ?? 'Add Full Name',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -123,8 +153,8 @@ class ProfileScreen extends ConsumerWidget {
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '(New User)', 
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                    rideLabel,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 12),
                   ),
                 ],
               ),
@@ -167,23 +197,99 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildStatsRow(Map<String, dynamic>? profile) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildStatItem('0', 'Rides'),
-        _buildStatItem('0kg', 'CO₂ Saved'),
-        _buildStatItem('₹0', 'Saved'),
-      ],
+  Widget _buildStatsRow(Map<String, dynamic>? profile, WidgetRef ref) {
+    final statsAsync = ref.watch(userStatsProvider);
+
+    return statsAsync.when(
+      data: (stats) {
+        final rides = stats['rides'] as int;
+        final co2Saved = stats['co2Saved'] as double;
+        final moneySaved = stats['moneySaved'] as double;
+
+        return Row(
+          children: [
+            Expanded(child: _buildStatCard('$rides', 'Rides', Icons.route_rounded)),
+            const SizedBox(width: 10),
+            Expanded(child: _buildStatCard('${co2Saved.toStringAsFixed(1)}kg', 'CO₂ Saved', Icons.eco_rounded)),
+            const SizedBox(width: 10),
+            Expanded(child: _buildStatCard('₹${moneySaved.toStringAsFixed(0)}', 'Saved', Icons.savings_rounded)),
+          ],
+        );
+      },
+      loading: () => Row(
+          children: [
+          Expanded(child: _buildStatCard('...', 'Rides', Icons.route_rounded)),
+          const SizedBox(width: 10),
+          Expanded(child: _buildStatCard('...', 'CO₂ Saved', Icons.eco_rounded)),
+          const SizedBox(width: 10),
+          Expanded(child: _buildStatCard('...', 'Saved', Icons.savings_rounded)),
+        ],
+      ),
+      error: (_, _) => Row(
+        children: [
+          Expanded(child: _buildStatCard('0', 'Rides', Icons.route_rounded)),
+          const SizedBox(width: 10),
+          Expanded(child: _buildStatCard('0kg', 'CO₂ Saved', Icons.eco_rounded)),
+          const SizedBox(width: 10),
+          Expanded(child: _buildStatCard('₹0', 'Saved', Icons.savings_rounded)),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatItem(String val, String label) {
-    return Column(
-      children: [
-        Text(val, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.grey)),
-      ],
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4EAF4)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: AppColors.trustBlue),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryNavy,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.primaryNavy.withValues(alpha: 0.65),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(List<Widget> tiles) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4EAF4)),
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < tiles.length; i++) ...[
+            tiles[i],
+            if (i < tiles.length - 1) const Divider(height: 1, indent: 56),
+          ],
+        ],
+      ),
     );
   }
 
@@ -194,7 +300,12 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 12, top: 8),
         child: Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.grey),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryNavy.withValues(alpha: 0.58),
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
@@ -202,8 +313,23 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildProfileTile(IconData icon, String title, {Widget? trail}) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.primaryNavy),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      leading: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: AppColors.trustBlue.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: AppColors.trustBlue, size: 19),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryNavy,
+        ),
+      ),
       trailing: trail ?? const Icon(Icons.chevron_right, size: 20),
       onTap: () {},
     );

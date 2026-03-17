@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/tracking_providers.dart';
+import '../../core/providers/ride_providers.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
   final String rideId;
@@ -22,12 +24,58 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
 class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
+  LatLng? _userLocation;
+  String _etaText = 'Calculating...';
 
   @override
   void initState() {
     super.initState();
-    // Start syncing user's own location if they are the driver (future logic)
-    // For passenger, we just watch the driverLocationProvider
+    _fetchUserLocation();
+  }
+
+  Future<void> _fetchUserLocation() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
+      final position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting user location: $e');
+    }
+  }
+
+  /// Calculate ETA based on distance between driver and user
+  void _calculateETA(LatLng driverLocation) {
+    if (_userLocation == null) {
+      setState(() => _etaText = 'Calculating...');
+      return;
+    }
+
+    // Calculate distance in meters using Geolocator
+    final distanceInMeters = Geolocator.distanceBetween(
+      driverLocation.latitude,
+      driverLocation.longitude,
+      _userLocation!.latitude,
+      _userLocation!.longitude,
+    );
+
+    // Estimate time based on average speed (30 km/h in city)
+    final distanceInKm = distanceInMeters / 1000;
+    final timeInMinutes = (distanceInKm / 30 * 60).round();
+
+    if (timeInMinutes < 1) {
+      setState(() => _etaText = 'Arriving now');
+    } else if (timeInMinutes == 1) {
+      setState(() => _etaText = 'Arriving in 1 min');
+    } else {
+      setState(() => _etaText = 'Arriving in $timeInMinutes mins');
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -37,6 +85,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   @override
   Widget build(BuildContext context) {
     final driverLocationAsync = ref.watch(driverLocationProvider(widget.driverId));
+    final rideAsync = ref.watch(rideByIdProvider(widget.rideId));
 
     return Scaffold(
       body: Stack(
@@ -53,7 +102,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     infoWindow: const InfoWindow(title: 'Driver is here'),
                   ),
                 );
-                
+
+                // Calculate ETA
+                _calculateETA(location);
+
                 // Animating camera to driver
                 _mapController?.animateCamera(
                   CameraUpdate.newLatLngZoom(location, 15),
@@ -103,7 +155,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                   child: const Row(
                     children: [
                       Icon(Icons.security, size: 16, color: AppColors.accentCoral),
-                      SFixed(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'Ride Protected',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -145,17 +197,37 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 children: [
                   Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColors.accentCoral,
-                        child: Icon(Icons.person, color: Colors.white),
+                      rideAsync.when(
+                        data: (ride) {
+                          final driver = ride?['profiles'] as Map<String, dynamic>?;
+                          return CircleAvatar(
+                            radius: 25,
+                            backgroundColor: AppColors.accentCoral,
+                            backgroundImage: driver?['avatar_url'] != null
+                                ? NetworkImage(driver!['avatar_url'])
+                                : null,
+                            child: driver?['avatar_url'] == null
+                                ? const Icon(Icons.person, color: Colors.white)
+                                : null,
+                          );
+                        },
+                        loading: () => const CircleAvatar(
+                          radius: 25,
+                          backgroundColor: AppColors.accentCoral,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        ),
+                        error: (_, _) => const CircleAvatar(
+                          radius: 25,
+                          backgroundColor: AppColors.accentCoral,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Driver is on the way',
                               style: TextStyle(
                                 color: Colors.white70,
@@ -163,8 +235,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                               ),
                             ),
                             Text(
-                              'Arriving in 8 mins',
-                              style: TextStyle(
+                              _etaText,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -179,16 +251,26 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     ],
                   ),
                   const Divider(color: Colors.white10, height: 32),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.location_on, color: AppColors.accentCoral, size: 20),
-                      SizedBox(width: 12),
+                      const Icon(Icons.location_on, color: AppColors.accentCoral, size: 20),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Meeting Point: Akshya Nagar, 1st Block',
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: rideAsync.when(
+                          data: (ride) => Text(
+                            'Meeting Point: ${ride?['origin_name'] ?? 'Loading...'}',
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          loading: () => const Text(
+                            'Loading meeting point...',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          error: (_, _) => const Text(
+                            'Meeting point unavailable',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
                         ),
                       ),
                     ],
@@ -253,16 +335,5 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
-  }
-}
-
-class SFixed extends StatelessWidget {
-  final double? width;
-  final double? height;
-  const SFixed({super.key, this.width, this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(width: width, height: height);
   }
 }

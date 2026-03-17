@@ -173,6 +173,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           password: password,
                         );
                         debugPrint('Auth: Login successful for $email');
+                        if (!context.mounted) return;
+                        context.go('/home');
                       }
                     } else {
                       debugPrint('Auth: Attempting phone login for: $phone');

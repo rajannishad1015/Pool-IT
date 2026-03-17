@@ -12,6 +12,40 @@ class AppTheme {
         surface: AppColors.white,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.6,
+          color: AppColors.primaryNavy,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+          color: AppColors.primaryNavy,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryNavy,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryNavy,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primaryNavy,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primaryNavy,
+        ),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primaryNavy,
         foregroundColor: AppColors.white,

@@ -70,4 +70,25 @@ class LocationService {
         .eq('id', driverId)
         .limit(1);
   }
+
+  /// Get all online drivers with their locations
+  Future<List<Map<String, dynamic>>> getOnlineDrivers() async {
+    try {
+      final response = await _client
+          .from('drivers')
+          .select('id, is_online, profiles:id(full_name, last_lat_lng)')
+          .eq('is_online', true);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Stream online drivers for real-time updates
+  Stream<List<Map<String, dynamic>>> getOnlineDriversStream() {
+    return _client
+        .from('drivers')
+        .stream(primaryKey: ['id'])
+        .eq('is_online', true);
+  }
 }

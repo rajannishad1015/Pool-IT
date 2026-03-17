@@ -3,28 +3,31 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
-  Map as MapIcon, 
-  Car, 
-  Users, 
-  MapPin, 
-  Clock, 
+import {
+  Map as MapIcon,
+  Car,
+  Users,
+  MapPin,
+  Clock,
   Navigation,
   Search,
   Filter,
   ArrowRight,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  Gauge
 } from "lucide-react"
 
 export default function LiveMonitoringPage() {
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState("all")
   const [selectedRide, setSelectedRide] = useState<any>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const { data: activeRides = [], isLoading } = useQuery({
     queryKey: ["active-monitoring-rides"],
@@ -45,11 +48,77 @@ export default function LiveMonitoringPage() {
     }
   })
 
+  // Get all rides for metrics calculation
+  const { data: allRides = [] } = useQuery({
+    queryKey: ["all-rides-metrics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rides")
+        .select('id, seats_total, seats_available, status, base_fare')
+      if (error) throw error
+      return data || []
+    }
+  })
+
+  // Get unique active cities/origins
+  const { data: activeCities = 0 } = useQuery({
+    queryKey: ["active-cities"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("rides")
+        .select('origin_name')
+        .eq('status', 'active')
+
+      if (!data) return 0
+      const uniqueCities = new Set(data.map(r => r.origin_name?.split(',')[0]?.trim()))
+      return uniqueCities.size
+    }
+  })
+
+  // Calculate real metrics
+  const metrics = useMemo(() => {
+    const completedRides = allRides.filter(r => r.status === 'completed')
+    const activeRidesList = allRides.filter(r => r.status === 'active')
+
+    // Seat utilization (booked seats / total seats)
+    const totalSeats = allRides.reduce((sum, r) => sum + (r.seats_total || 0), 0)
+    const bookedSeats = allRides.reduce((sum, r) => sum + ((r.seats_total || 0) - (r.seats_available || 0)), 0)
+    const seatUtilization = totalSeats > 0 ? Math.round((bookedSeats / totalSeats) * 100) : 0
+
+    // Average fare
+    const avgFare = completedRides.length > 0
+      ? Math.round(completedRides.reduce((sum, r) => sum + (r.base_fare || 0), 0) / completedRides.length)
+      : 0
+
+    // Active ride count
+    const activeCount = activeRidesList.length
+
+    return {
+      seatUtilization,
+      avgFare,
+      activeCount
+    }
+  }, [allRides])
+
+  // Search filter
+  const filteredRides = useMemo(() => {
+    if (!searchQuery) return activeRides
+    const query = searchQuery.toLowerCase()
+    return activeRides.filter(ride =>
+      (ride.profiles as any)?.full_name?.toLowerCase().includes(query) ||
+      ride.id.toLowerCase().includes(query) ||
+      ride.origin_name?.toLowerCase().includes(query) ||
+      ride.destination_name?.toLowerCase().includes(query)
+    )
+  }, [activeRides, searchQuery])
+
   // Real-time synchronization
   useEffect(() => {
     const channel = supabase.channel('monitoring-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rides', filter: "status=eq.active" }, () => {
         queryClient.invalidateQueries({ queryKey: ["active-monitoring-rides"] })
+        queryClient.invalidateQueries({ queryKey: ["all-rides-metrics"] })
+        queryClient.invalidateQueries({ queryKey: ["active-cities"] })
       })
       .subscribe()
 
@@ -108,7 +177,7 @@ export default function LiveMonitoringPage() {
               <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
                 <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-white shadow-2xl">
                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider">
-                      <Navigation className="h-3 w-3" /> 12 Cities Active
+                      <Navigation className="h-3 w-3" /> {activeCities} {activeCities === 1 ? 'City' : 'Cities'} Active
                    </div>
                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider border border-blue-100">
                       <AlertCircle className="h-3 w-3" /> 0 Deviations
@@ -128,16 +197,16 @@ export default function LiveMonitoringPage() {
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="p-6 border-none shadow-lg rounded-[2rem] bg-white text-center">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Avg Speed</p>
-                 <p className="text-3xl font-extrabold text-slate-900">42 <span className="text-sm font-bold text-slate-400">km/h</span></p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Rides</p>
+                 <p className="text-3xl font-extrabold text-blue-600">{metrics.activeCount} <span className="text-sm font-bold text-slate-400">rides</span></p>
               </Card>
               <Card className="p-6 border-none shadow-lg rounded-[2rem] bg-white text-center">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Efficiency</p>
-                 <p className="text-3xl font-extrabold text-emerald-600">94 <span className="text-sm font-bold text-slate-400">%</span></p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Seat Utilization</p>
+                 <p className="text-3xl font-extrabold text-emerald-600">{metrics.seatUtilization} <span className="text-sm font-bold text-slate-400">%</span></p>
               </Card>
               <Card className="p-6 border-none shadow-lg rounded-[2rem] bg-white text-center">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ETA Latency</p>
-                 <p className="text-3xl font-extrabold text-slate-900">1.2 <span className="text-sm font-bold text-slate-400">min</span></p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Avg Fare</p>
+                 <p className="text-3xl font-extrabold text-slate-900">₹{metrics.avgFare} <span className="text-sm font-bold text-slate-400"></span></p>
               </Card>
            </div>
         </div>
@@ -152,14 +221,16 @@ export default function LiveMonitoringPage() {
 
            <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input 
-                placeholder="Search drive or ride ID..." 
+              <input
+                placeholder="Search driver or ride ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-100 bg-white shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium"
               />
            </div>
 
            <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
-              {activeRides.map((ride) => (
+              {filteredRides.map((ride) => (
                 <Card key={ride.id} className="p-5 border border-slate-50 shadow-md hover:shadow-xl transition-all cursor-pointer rounded-3xl bg-white group border-l-4 border-l-blue-600">
                    <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -199,7 +270,7 @@ export default function LiveMonitoringPage() {
                 </Card>
               ))}
 
-              {activeRides.length === 0 && !isLoading && (
+              {filteredRides.length === 0 && !isLoading && (
                 <div className="text-center py-20 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
                    <Navigation className="h-10 w-10 text-slate-300 mx-auto mb-3" />
                    <p className="text-sm font-bold text-slate-400">No active tracking</p>

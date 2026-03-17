@@ -10,6 +10,7 @@ import '../../features/rides/rides_list_screen.dart';
 import '../../features/rides/ride_detail_screen.dart';
 import '../../features/rides/offer_ride_screen.dart';
 import '../../features/bookings/booking_confirmation_screen.dart';
+import 'go_router_refresh_stream.dart';
 import '../../features/wallet/wallet_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/rides/active_ride_screen.dart';
@@ -17,7 +18,7 @@ import '../../features/rides/active_ride_screen.dart';
 final appRouter = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
-    // refreshListenable: GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
+    refreshListenable: GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
     redirect: (context, state) {
       final session = SupabaseService.client.auth.currentSession;
       final matchedPath = state.matchedLocation;
@@ -65,6 +66,7 @@ final appRouter = Provider<GoRouter>((ref) {
         path: '/rides',
         builder: (context, state) => RidesListScreen(
           destination: state.uri.queryParameters['destination'],
+          mode: state.uri.queryParameters['mode'],
         ),
       ),
       GoRoute(
@@ -73,7 +75,10 @@ final appRouter = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/booking-confirmation',
-        builder: (context, state) => const BookingConfirmationScreen(),
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>?;
+          return BookingConfirmationScreen(bookingData: extras);
+        },
       ),
       GoRoute(
         path: '/offer-ride',

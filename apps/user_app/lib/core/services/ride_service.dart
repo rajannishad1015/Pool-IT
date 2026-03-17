@@ -45,10 +45,22 @@ class RideService {
   }) async {
     debugPrint('RideService: Fetching available rides with filters: origin=$originQuery, dest=$destQuery');
     try {
-      // Simplified query without joins to test performance/hang
+      // Query with driver profile and vehicle joins
       var query = _client
           .from('rides')
-          .select() // Removed joins
+          .select('''
+            *,
+            profiles:driver_id (
+              full_name,
+              avatar_url,
+              trust_score
+            ),
+            vehicles:vehicle_id (
+              make,
+              model,
+              plate_number
+            )
+          ''')
           .eq('status', 'scheduled')
           .gt('seats_available', 0)
           .gt('departure_time', DateTime.now().toIso8601String());
@@ -61,18 +73,17 @@ class RideService {
       }
 
       final startTime = DateTime.now();
-      // Add a timeout to ensure it doesn't hang forever
       final response = await query.order('departure_time').timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 15),
         onTimeout: () {
-          debugPrint('RideService: Query timed out after 10s');
-          throw 'Query timeout';
+          debugPrint('RideService: Query timed out after 15s');
+          throw 'Query timeout - please try again';
         },
       );
-      
+
       final duration = DateTime.now().difference(startTime);
       debugPrint('RideService: Query completed in ${duration.inMilliseconds}ms, found ${response.length} rides');
-      
+
       return List<Map<String, dynamic>>.from(response);
     } catch (e, stack) {
       debugPrint('RideService ERROR: $e');

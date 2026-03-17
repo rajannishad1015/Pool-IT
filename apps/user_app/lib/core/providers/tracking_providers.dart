@@ -16,7 +16,7 @@ final driverLocationProvider = StreamProvider.family<LatLng?, String>((ref, driv
     if (event.isEmpty) return null;
     final profile = event.first;
     final lastLatLng = profile['last_lat_lng'] as String?;
-    
+
     if (lastLatLng != null) {
       // Postgres point format: (latitude,longitude)
       final clean = lastLatLng.replaceAll('(', '').replaceAll(')', '');
@@ -31,6 +31,31 @@ final driverLocationProvider = StreamProvider.family<LatLng?, String>((ref, driv
     return null;
   });
 });
+
+/// Provider to fetch all online drivers with their locations
+final onlineDriversProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final locationService = ref.watch(locationServiceProvider);
+  return locationService.getOnlineDrivers();
+});
+
+/// Helper to parse last_lat_lng string into LatLng
+LatLng? parseLatLng(String? lastLatLng) {
+  if (lastLatLng == null) return null;
+  // Postgres point format: (latitude,longitude)
+  final clean = lastLatLng.replaceAll('(', '').replaceAll(')', '');
+  final coords = clean.split(',');
+  if (coords.length == 2) {
+    try {
+      return LatLng(
+        double.parse(coords[0]),
+        double.parse(coords[1]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
 
 /// Background task to sync location to Supabase during a ride
 final locationSyncProvider = Provider.family<void, String>((ref, userId) {

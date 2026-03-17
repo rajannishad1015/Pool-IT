@@ -11,7 +11,7 @@ int _callCount = 0;
 final availableRidesProvider = FutureProvider.family<List<Map<String, dynamic>>, String?>((ref, destination) async {
   _callCount++;
   debugPrint('availableRidesProvider: Call #$_callCount for destination: $destination');
-  
+
   final rideService = ref.watch(rideServiceProvider);
   return await rideService.getAvailableRides(
     destQuery: destination,
@@ -21,22 +21,34 @@ final availableRidesProvider = FutureProvider.family<List<Map<String, dynamic>>,
 final userRidesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
-  
+
   final rideService = ref.watch(rideServiceProvider);
   return await rideService.getDriverRides(user.id);
 });
 
-final mockAvailableRidesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  await Future.delayed(const Duration(seconds: 1));
-  return [
-    {
-      'id': 'mock-1',
-      'origin_name': 'Mock Origin',
-      'destination_name': 'Mock Destination',
-      'departure_time': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
-      'seats_available': 3,
-      'base_fare': 100.0,
-      'profiles': {'full_name': 'Mock Driver', 'trust_score': 4.8},
-    }
-  ];
+/// Provider to fetch a single ride by its ID with driver and vehicle details
+final rideByIdProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, rideId) async {
+  final supabase = ref.watch(supabaseClientProvider);
+
+  final response = await supabase
+      .from('rides')
+      .select('''
+        *,
+        profiles:driver_id (
+          full_name,
+          avatar_url,
+          trust_score,
+          phone_number,
+          last_lat_lng
+        ),
+        vehicles:vehicle_id (
+          make,
+          model,
+          plate_number
+        )
+      ''')
+      .eq('id', rideId)
+      .maybeSingle();
+
+  return response;
 });

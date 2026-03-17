@@ -14,7 +14,13 @@ class WalletScreen extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Wallet')),
+      backgroundColor: const Color(0xFFF6F8FC),
+      appBar: AppBar(
+        title: const Text('Wallet'),
+        backgroundColor: const Color(0xFFF6F8FC),
+        foregroundColor: AppColors.primaryNavy,
+        elevation: 0,
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(walletBalanceProvider);
@@ -24,12 +30,14 @@ class WalletScreen extends ConsumerWidget {
           data: (balance) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildBalanceCard(context, ref, balance),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 _buildQuickAdd(context, ref),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 _buildTransactionHistory(transactionsAsync),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -47,21 +55,55 @@ class WalletScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [AppColors.primaryNavy, AppColors.trustBlue],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         boxShadow: [
-          BoxShadow(color: AppColors.primaryNavy.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(
+            color: AppColors.primaryNavy.withValues(alpha: 0.28),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('SmartPool Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'SmartPool Balance',
+                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
             '₹${balance.toStringAsFixed(2)}',
-            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Last updated ${DateFormat('hh:mm a').format(DateTime.now())}',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
           ),
           const SizedBox(height: 24),
           Row(
@@ -82,10 +124,11 @@ class WalletScreen extends ConsumerWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -101,17 +144,28 @@ class WalletScreen extends ConsumerWidget {
   }
 
   Widget _buildQuickAdd(BuildContext context, WidgetRef ref) {
-    return Column(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5EBF4)),
+      ),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Quick Add', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Quick Add',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryNavy),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [100.0, 250.0, 500.0, 1000.0].map((amt) {
               return InkWell(
@@ -119,19 +173,26 @@ class WalletScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.grey.withValues(alpha: 0.3)),
+                    color: const Color(0xFFF8FAFD),
+                    border: Border.all(color: const Color(0xFFDCE4F1)),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text('₹${amt.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    '₹${amt.toInt()}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryNavy,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
           ),
         ),
       ],
-    );
+    ));
   }
 
   Widget _buildTransactionHistory(AsyncValue<List<Map<String, dynamic>>> transactionsAsync) {
@@ -140,9 +201,12 @@ class WalletScreen extends ConsumerWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text(
+            'Recent Transactions',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryNavy),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         transactionsAsync.when(
           data: (transactions) => transactions.isEmpty
               ? const Center(child: Padding(
@@ -153,31 +217,52 @@ class WalletScreen extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: transactions.length,
-                  separatorBuilder: (context, index) => const Divider(indent: 72),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final tx = transactions[index];
                     final type = tx['type'] as String?;
                     final isCredit = type == 'deposit' || type == 'refund';
                     final date = DateTime.parse(tx['created_at']);
                     
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isCredit 
-                            ? Colors.green.withValues(alpha: 0.1) 
-                            : Colors.red.withValues(alpha: 0.1),
-                        child: Icon(
-                          isCredit ? Icons.call_received : Icons.call_made,
-                          color: isCredit ? Colors.green : Colors.red,
-                          size: 20,
-                        ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE6ECF5)),
                       ),
-                      title: Text(tx['description'] ?? 'Transaction'),
-                      subtitle: Text(DateFormat('MMM dd, yyyy • hh:mm a').format(date.toLocal())),
-                      trailing: Text(
-                        '${isCredit ? '+' : '-'}₹${(tx['amount'] as num).toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isCredit ? Colors.green : Colors.red,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        leading: CircleAvatar(
+                          backgroundColor: isCredit
+                              ? const Color(0xFFE9F9EF)
+                              : const Color(0xFFFFEFF1),
+                          child: Icon(
+                            isCredit ? Icons.call_received : Icons.call_made,
+                            color: isCredit ? const Color(0xFF17985F) : AppColors.accentCoral,
+                            size: 18,
+                          ),
+                        ),
+                        title: Text(
+                          tx['description'] ?? 'Transaction',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryNavy,
+                          ),
+                        ),
+                        subtitle: Text(
+                          DateFormat('MMM dd, yyyy • hh:mm a').format(date.toLocal()),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primaryNavy.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        trailing: Text(
+                          '${isCredit ? '+' : '-'}₹${(tx['amount'] as num).toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isCredit ? const Color(0xFF17985F) : AppColors.accentCoral,
+                          ),
                         ),
                       ),
                     );

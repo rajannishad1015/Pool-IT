@@ -7,16 +7,17 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
-  ShieldAlert, 
-  MapPin, 
-  Clock, 
-  Phone, 
+import {
+  ShieldAlert,
+  MapPin,
+  Clock,
+  Phone,
   ShieldCheck,
   AlertTriangle,
   ChevronRight,
   User,
-  Activity
+  Activity,
+  Loader2
 } from "lucide-react"
 
 function timeAgo(date: string | null) {
@@ -53,6 +54,70 @@ export default function SafetyPage() {
         .order('created_at', { ascending: false })
       if (error) throw error
       return data || []
+    }
+  })
+
+  // Fetch flagged/problematic users (drivers with strikes >= 2 or users with multiple incidents)
+  const { data: flaggedUsers = [], isLoading: flaggedLoading } = useQuery({
+    queryKey: ["flagged-users"],
+    queryFn: async () => {
+      // Get drivers with strikes
+      const { data: driversWithStrikes } = await supabase
+        .from("drivers")
+        .select(`
+          id,
+          strikes,
+          profiles:id (
+            full_name
+          )
+        `)
+        .gte('strikes', 2)
+        .order('strikes', { ascending: false })
+        .limit(5)
+
+      // Get users with multiple safety incidents
+      const { data: incidentsByUser } = await supabase
+        .from("safety_incidents")
+        .select('user_id, profiles:user_id(full_name)')
+
+      // Count incidents per user
+      const incidentCounts: Record<string, { count: number; name: string }> = {}
+      incidentsByUser?.forEach(incident => {
+        if (incident.user_id) {
+          if (!incidentCounts[incident.user_id]) {
+            incidentCounts[incident.user_id] = {
+              count: 0,
+              name: (incident.profiles as any)?.full_name || 'Unknown'
+            }
+          }
+          incidentCounts[incident.user_id].count++
+        }
+      })
+
+      const problematicUsers = Object.entries(incidentCounts)
+        .filter(([_, data]) => data.count >= 2)
+        .map(([id, data]) => ({
+          id,
+          name: data.name,
+          reason: `${data.count} incidents`,
+          type: 'incident'
+        }))
+
+      const flaggedDrivers = (driversWithStrikes || []).map(d => ({
+        id: d.id,
+        name: (d.profiles as any)?.full_name || 'Driver',
+        reason: `${d.strikes} strikes`,
+        type: 'strikes'
+      }))
+
+      // Combine and dedupe
+      const allFlagged = [...flaggedDrivers, ...problematicUsers]
+      const seen = new Set()
+      return allFlagged.filter(u => {
+        if (seen.has(u.id)) return false
+        seen.add(u.id)
+        return true
+      }).slice(0, 5)
     }
   })
 
@@ -202,19 +267,37 @@ export default function SafetyPage() {
                  </div>
 
                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Banned Users</p>
-                    {[1, 2].map((i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 transition-colors hover:bg-white/10">
-                         <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-rose-500/20 rounded-lg flex items-center justify-center font-bold text-rose-400">H</div>
-                            <div>
-                               <p className="text-xs font-semibold">Harsh T.</p>
-                               <p className="text-[10px] text-slate-500">Verified Threat</p>
-                            </div>
-                         </div>
-                         <Badge className="bg-rose-500 text-white border-none text-[9px] font-bold px-2">Banned</Badge>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Flagged Users ({flaggedUsers.length})</p>
+                    {flaggedLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                       </div>
-                    ))}
+                    ) : flaggedUsers.length > 0 ? (
+                      flaggedUsers.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 transition-colors hover:bg-white/10">
+                           <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 bg-rose-500/20 rounded-lg flex items-center justify-center font-bold text-rose-400">
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                 <p className="text-xs font-semibold">{user.name}</p>
+                                 <p className="text-[10px] text-slate-500">{user.reason}</p>
+                              </div>
+                           </div>
+                           <Badge className={cn(
+                             "border-none text-[9px] font-bold px-2",
+                             user.type === 'strikes' ? "bg-rose-500 text-white" : "bg-amber-500 text-white"
+                           )}>
+                             {user.type === 'strikes' ? 'Flagged' : 'Watch'}
+                           </Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center">
+                        <ShieldCheck className="h-6 w-6 text-emerald-400 mx-auto mb-2" />
+                        <p className="text-xs text-slate-400">No flagged users</p>
+                      </div>
+                    )}
                  </div>
               </CardContent>
               <div className="p-8 pt-0">

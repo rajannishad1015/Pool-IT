@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/providers/ride_providers.dart';
 import '../../core/providers/supabase_providers.dart';
 import '../../core/providers/profile_providers.dart';
+import '../../core/services/geocoding_service.dart';
 import '../../shared/widgets/primary_button.dart';
 
 class OfferRideScreen extends ConsumerStatefulWidget {
@@ -265,21 +266,32 @@ class _OfferRideScreenState extends ConsumerState<OfferRideScreen> {
     try {
       final user = ref.read(currentUserProvider);
       final vehicles = await ref.read(userVehiclesProvider.future);
-      
+
       if (vehicles.isEmpty) {
         throw 'You need to add a vehicle first';
+      }
+
+      // Geocode origin and destination addresses
+      final originCoords = await GeocodingService.geocodeAddress(_originController.text);
+      if (originCoords == null) {
+        throw 'Could not find location for "${_originController.text}". Please enter a valid address.';
+      }
+
+      final destCoords = await GeocodingService.geocodeAddress(_destController.text);
+      if (destCoords == null) {
+        throw 'Could not find location for "${_destController.text}". Please enter a valid address.';
       }
 
       final rideService = ref.read(rideServiceProvider);
       await rideService.createRide(
         driverId: user!.id,
-        vehicleId: vehicles.first['id'], 
+        vehicleId: vehicles.first['id'],
         originName: _originController.text,
-        originLat: 19.0760, 
-        originLng: 72.8777, 
+        originLat: originCoords.latitude,
+        originLng: originCoords.longitude,
         destinationName: _destController.text,
-        destinationLat: 19.1136, 
-        destinationLng: 72.8697, 
+        destinationLat: destCoords.latitude,
+        destinationLng: destCoords.longitude,
         departureTime: _selectedDate,
         seatsTotal: _seats,
         baseFare: double.parse(_fareController.text),

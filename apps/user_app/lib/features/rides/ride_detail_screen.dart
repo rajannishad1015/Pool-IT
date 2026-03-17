@@ -50,16 +50,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                 color: const Color(0xFFE2E8F0),
                 child: Stack(
                   children: [
-                    // Mock Map Background
+                    // Map Background Placeholder
                     Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.5,
-                        child: Image.network(
-                          'https://api.mapbox.com/styles/v1/mapbox/light-v10/static/78.9629,20.5937,5/800x400?access_token=pk.dummy', // Placeholder
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const Center(
-                            child: Icon(Icons.map_rounded, size: 80, color: Colors.blueGrey),
-                          ),
+                      child: Container(
+                        color: const Color(0xFFE2E8F0),
+                        child: const Center(
+                          child: Icon(Icons.map_rounded, size: 80, color: Colors.blueGrey),
                         ),
                       ),
                     ),
@@ -160,7 +156,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
                     
                     const Text('Route & Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
                     const SizedBox(height: 16),
-                    _buildRouteTimeline(ride['origin_name'], ride['destination_name'], departureTime),
+                    _buildRouteTimeline(
+                      ride['origin_name'],
+                      ride['destination_name'],
+                      departureTime,
+                      ride['estimated_minutes'] as int?,
+                    ),
                     
                     const SizedBox(height: 24),
                     const Text('Vehicle Info', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryNavy)),
@@ -203,7 +204,12 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
     );
   }
 
-  Widget _buildRouteTimeline(String origin, String dest, DateTime time) {
+  Widget _buildRouteTimeline(String origin, String dest, DateTime departureTime, int? estimatedMinutes) {
+    // Calculate ETA based on estimated duration or default to 45 minutes
+    final durationMinutes = estimatedMinutes ?? 45;
+    final arrivalTime = departureTime.add(Duration(minutes: durationMinutes));
+    final etaString = '${arrivalTime.hour}:${arrivalTime.minute.toString().padLeft(2, '0')}';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -212,7 +218,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
       ),
       child: Column(
         children: [
-          _buildTimelineItem(origin, '${time.hour}:${time.minute.toString().padLeft(2, '0')}', isDeparture: true),
+          _buildTimelineItem(origin, '${departureTime.hour}:${departureTime.minute.toString().padLeft(2, '0')}', isDeparture: true),
           Padding(
             padding: const EdgeInsets.only(left: 7),
             child: Align(
@@ -224,7 +230,7 @@ class _RideDetailScreenState extends ConsumerState<RideDetailScreen> {
               ),
             ),
           ),
-          _buildTimelineItem(dest, 'ETA +1h', isDeparture: false),
+          _buildTimelineItem(dest, 'ETA $etaString', isDeparture: false),
         ],
       ),
     );
