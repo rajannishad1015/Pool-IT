@@ -17,6 +17,14 @@ final userVehiclesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) as
   return await profileService.getVehicles(user.id);
 });
 
+final userVerificationProvider = FutureProvider<String>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return 'unverified';
+
+  final profileService = ref.watch(profileServiceProvider);
+  return await profileService.getVerificationStatus(user.id);
+});
+
 /// User stats provider - fetches ride count, calculates CO2 saved, money saved
 final userStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final user = ref.watch(currentUserProvider);

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart' as image_picker;
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/supabase_providers.dart';
 import '../../core/providers/profile_providers.dart';
+import 'id_verification_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -29,7 +30,26 @@ class ProfileScreen extends ConsumerWidget {
                     _buildSectionTitle('Account'),
                     _buildSettingsCard([
                       _buildProfileTile(context, Icons.person_outline, 'Edit Profile'),
-                      _buildProfileTile(context, Icons.verified_user_outlined, 'ID Verification', trail: _buildPendingBadge(profile?['is_verified'] ?? false)),
+                      Consumer(builder: (context, ref, child) {
+                        final verificationStatus = ref.watch(userVerificationProvider).maybeWhen(
+                          data: (v) => v,
+                          orElse: () => 'unverified',
+                        );
+                        final isVerified = verificationStatus == 'verified';
+                        
+                        return _buildProfileTile(
+                          context, 
+                          isVerified ? Icons.verified_user : Icons.verified_user_outlined, 
+                          'ID Verification', 
+                          trail: _buildStatusBadge(verificationStatus),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const IdVerificationScreen()),
+                            );
+                          },
+                        );
+                      }),
                       _buildProfileTile(context, Icons.directions_car_outlined, 'My Vehicle'),
                     ]),
                     const SizedBox(height: 24),
@@ -311,7 +331,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileTile(BuildContext context, IconData icon, String title, {Widget? trail}) {
+  Widget _buildProfileTile(BuildContext context, IconData icon, String title, {Widget? trail, VoidCallback? onTap}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       leading: Container(
@@ -331,7 +351,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       trailing: trail ?? const Icon(Icons.chevron_right, size: 20),
-      onTap: () {
+      onTap: onTap ?? () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$title feature coming soon!')),
         );
@@ -339,18 +359,43 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingBadge(bool isVerified) {
-    if (isVerified) {
+  Widget _buildStatusBadge(String status) {
+    if (status == 'verified') {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-        child: const Text('Verified', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE9F9EF),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text('Verified', style: TextStyle(color: Color(0xFF17985F), fontSize: 11, fontWeight: FontWeight.bold)),
+      );
+    } else if (status == 'pending') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7E6),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text('Pending', style: TextStyle(color: Color(0xFFF9A825), fontSize: 11, fontWeight: FontWeight.bold)),
+      );
+    } else if (status == 'rejected') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFEFF1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text('Rejected', style: TextStyle(color: AppColors.accentCoral, fontSize: 11, fontWeight: FontWeight.bold)),
       );
     }
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-      child: const Text('Pending', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF0F1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text('Unverified', style: TextStyle(color: AppColors.accentCoral, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
 }

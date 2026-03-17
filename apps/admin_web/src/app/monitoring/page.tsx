@@ -22,6 +22,13 @@ import {
   TrendingUp,
   Gauge
 } from "lucide-react"
+import dynamic from "next/dynamic"
+
+// Dynamically import MapComponent with SSR disabled
+const MapComponent = dynamic(() => import("@/components/ui/map-component"), {
+  ssr: false,
+  loading: () => <div className="h-[600px] w-full bg-slate-100 animate-pulse rounded-[2.5rem]" />
+})
 
 export default function LiveMonitoringPage() {
   const queryClient = useQueryClient()
@@ -147,32 +154,20 @@ export default function LiveMonitoringPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-6">
-           {/* Map Placeholder */}
-           <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-white h-[600px] relative group">
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=2000')] bg-cover opacity-80" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent" />
-              
-              {/* Virtual Markers */}
-              {activeRides.slice(0, 5).map((ride, i) => (
-                <div 
-                  key={ride.id} 
-                  className="absolute animate-bounce"
-                  style={{ 
-                    top: `${20 + i * 15}%`, 
-                    left: `${30 + i * 10}%` 
-                  }}
-                >
-                  <div className="bg-white p-2 rounded-2xl shadow-2xl border-white flex items-center gap-2 border">
-                    <div className="h-8 w-8 bg-blue-600 rounded-xl flex items-center justify-center">
-                      <Car className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="pr-2">
-                       <p className="text-[10px] font-bold text-slate-900 leading-none">{(ride.profiles as any)?.full_name?.split(' ')[0]}</p>
-                       <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mt-0.5 whitespace-nowrap">Active Now</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+           {/* Real-time Map Integration */}
+           <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-white h-[600px] p-0 relative group">
+              <MapComponent 
+                rides={activeRides.map((r: any) => {
+                  const [lat, lng] = (r.profiles?.last_lat_lng as string || '').split(',').map(Number) || [0, 0]
+                  return {
+                    id: r.id,
+                    driverName: r.profiles?.full_name || undefined,
+                    lat: isNaN(lat) ? 0 : lat,
+                    lng: isNaN(lng) ? 0 : lng,
+                    status: 'Active Now'
+                  }
+                }).filter((r: any) => r.lat !== 0 && r.lng !== 0)} 
+              />
 
               <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
                 <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-white shadow-2xl">
